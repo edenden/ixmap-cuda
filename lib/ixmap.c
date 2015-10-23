@@ -12,7 +12,9 @@
 #include <net/ethernet.h>
 #include <signal.h>
 #include <pthread.h>
-#include <ixmap.h>
+
+#include "ixmap.h"
+#include "memory.h"
 
 struct ixmap_desc *ixmap_desc_alloc(struct ixmap_handle **ih_list, int ih_num,
 	int queue_index)

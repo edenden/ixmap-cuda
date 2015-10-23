@@ -12,8 +12,10 @@
 #include <sys/signalfd.h>
 #include <pthread.h>
 
+extern "C" {
 #include "ixmap.h"
 #include "driver.h"
+}
 
 static inline uint16_t ixmap_desc_unused(struct ixmap_ring *ring,
 	uint16_t num_desc);
