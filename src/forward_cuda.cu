@@ -27,8 +27,7 @@ __global__ void forward_process(struct ixmapfwd_thread *thread,
 	eth = (struct ethhdr *)packet[i].slot_buf;
 	switch(ntohs(eth->h_proto)){
 	case ETH_P_ARP:
-		result[i].outif =
-			forward_arp_process(thread, port_index, &packet[i]);
+		result[i].outif = -2;
 		break;
 	case ETH_P_IP:
 		result[i].outif =

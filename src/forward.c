@@ -13,9 +13,6 @@
 #include "forward.h"
 #include "thread.h"
 
-static int forward_arp_process(struct ixmapfwd_thread *thread,
-	unsigned int port_index, struct ixmap_packet *packet);
-
 void forward_process_offload(struct ixmapfwd_thread *thread, unsigned int port_index,
 	struct ixmap_packet *packet)
 {
@@ -72,22 +69,6 @@ void forward_process_tun(struct ixmapfwd_thread *thread, unsigned int port_index
 err_slot_assign:
 err_slot_size:
 	return;
-}
-
-static int forward_arp_process(struct ixmapfwd_thread *thread,
-	unsigned int port_index, struct ixmap_packet *packet)
-{
-	int fd, ret;
-
-	fd = thread->tun_plane->ports[port_index].fd;
-	ret = write(fd, packet->slot_buf, packet->slot_size);
-	if(ret < 0)
-		goto err_write_tun;
-
-	return -1;
-
-err_write_tun:
-	return -1;
 }
 
 
