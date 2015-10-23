@@ -16,36 +16,33 @@ extern "C" {
 }
 
 __global__ void forward_process(struct ixmapfwd_thread *thread,
-	unsigned int port_index, struct ixmap_packet *packet)
+	unsigned int port_index, struct ixmap_packet *packet,
+	struct ixmap_packet_cuda *result)
 {
 	struct ethhdr *eth;
-	int ret;
+	int ret, i;
 
-	eth = (struct ethhdr *)packet->slot_buf;
+	i = index;
+
+	eth = (struct ethhdr *)packet[i].slot_buf;
 	switch(ntohs(eth->h_proto)){
 	case ETH_P_ARP:
-		ret = forward_arp_process(thread, port_index, packet);
+		result[i].outif =
+			forward_arp_process(thread, port_index, &packet[i]);
 		break;
 	case ETH_P_IP:
-		ret = forward_ip_process(thread, port_index, packet);
+		result[i].outif =
+			forward_ip_process(thread, port_index, &packet[i]);
 		break;
 	case ETH_P_IPV6:
-		ret = forward_ip6_process(thread, port_index, packet);
+		result[i].outif =
+			forward_ip6_process(thread, port_index, &packet[i]);
 		break;
 	default:
-		ret = -1;
+		result[i].outif = -1;
 		break;
 	}
 
-	if(ret < 0){
-		goto packet_drop;
-	}
-
-	ixmap_tx_assign(thread->plane, ret, thread->buf, packet);
-	return;
-
-packet_drop:
-	ixmap_slot_release(thread->buf, packet->slot_index);
 	return;
 }
 
@@ -110,8 +107,7 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	return ret;
 
 packet_local:
-	fd = thread->tun_plane->ports[port_index].fd;
-	write(fd, packet->slot_buf, packet->slot_size);
+	return -2;
 packet_drop:
 	return -1;
 }
@@ -176,8 +172,7 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	return ret;
 
 packet_local:
-	fd = thread->tun_plane->ports[port_index].fd;
-	write(fd, packet->slot_buf, packet->slot_size);
+	return -2;
 packet_drop:
 	return -1;
 }
