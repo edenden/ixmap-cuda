@@ -1,5 +1,2 @@
-Makefile
 *.o
-.deps
-.libs
 ixmap

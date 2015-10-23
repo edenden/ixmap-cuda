@@ -342,15 +342,3 @@ static int ixmapfwd_set_signal(sigset_t *sigset)
 	return 0;
 }
 
-void map_gpu(void *ptr, unsigned int size)
-{
-	cudaHostRegister(ptr, size, cudaHostRegisterMapped);
-	return;
-}
-
-void unmap_gpu(void *ptr)
-{
-	cudaHostUnregister(ptr);
-	return;
-}
-

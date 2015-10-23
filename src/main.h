@@ -44,8 +44,6 @@ struct ixmapfwd {
 };
 
 void ixmapfwd_log(int level, char *fmt, ...);
-void *malloc_gpu(unsigned int size);
-void free_gpu(void *ptr);
 extern char *optarg;
 
 #endif /* _IXMAPFWD_MAIN_H */

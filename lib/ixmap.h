@@ -10,6 +10,7 @@
 #define FILENAME_SIZE 256
 #define IXMAP_IFNAME "ixgbe"
 #define SIZE_1GB (1ul << 30)
+#define SIZE_256MB (1ul << 28)
 
 #define min(x, y) ({				\
 	typeof(x) _min1 = (x);			\
