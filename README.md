@@ -1,3 +1,2 @@
 # IXMAP-CUDA
-GPU offloading version of IXMAP  
-See original repository [here](https://github.com/edenden/ixmap)
+GPU offloading version of [IXMAP](https://github.com/edenden/ixmap)
