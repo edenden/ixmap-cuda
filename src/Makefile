@@ -24,7 +24,6 @@ clean:
 	rm -f $(TARGET)
 
 $(TARGET): $(OBJS)
-#	$(CC) $(CFLAGS) $(CCFLAGS) $(LDFLAGS) $(OBJS) ../lib/ixmap_cuda.a -o $(TARGET)
 	nvcc $(OBJS) ../lib/ixmap_cuda.a $(LDFLAGS) -o $(TARGET)
 
 .SUFFIXES: .c .cu .o
