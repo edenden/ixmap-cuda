@@ -23,7 +23,7 @@ $(TARGET): $(OBJS)
 .SUFFIXES: .c .cu .o
 
 .cu.o:
-	$(NVCC) $(CFLAGS) --x cu --compile $< -o $@
+	$(NVCC) $(CFLAGS) --x cu --compile --relocatable-device-code=true $< -o $@
 
 .c.o:
 	$(CC) $(CFLAGS) $(CCFLAGS) -c $< -o $@

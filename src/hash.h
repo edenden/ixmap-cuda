@@ -30,6 +30,7 @@ struct hash_table {
 };
 
 #ifdef __CUDACC__
+extern "C"
 __device__ struct hash_entry *hash_lookup(struct hash_table *table,
 	void *key);
 #endif

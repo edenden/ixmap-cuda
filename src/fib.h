@@ -28,6 +28,7 @@ struct fib {
 };
 
 #ifdef __CUDACC__
+extern "C"
 __device__ struct fib_entry *fib_lookup(struct fib *fib, void *destination);
 #endif
 

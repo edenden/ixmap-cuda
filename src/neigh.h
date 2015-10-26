@@ -21,6 +21,7 @@ struct neigh_entry {
 };
 
 #ifdef __CUDACC__
+extern "C"
 __device__ struct neigh_entry *neigh_lookup(struct neigh_table *neigh,
 	void *dst_addr);
 #endif

@@ -10,6 +10,7 @@ extern "C" {
 #include "hash.h"
 }
 
+extern "C"
 __device__ struct hash_entry *hash_lookup(struct hash_table *table,
 	void *key)
 {

@@ -12,6 +12,7 @@ extern "C" {
 #include "lpm.h"
 }
 
+extern "C"
 __device__ struct fib_entry *fib_lookup(struct fib *fib, void *destination)
 {
 	struct lpm_entry *entry;

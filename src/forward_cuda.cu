@@ -18,17 +18,21 @@ extern "C" {
 #include "thread.h"
 #include "neigh.h"
 #include "fib.h"
-#include "cuda.h"
+#include "misc.h"
 }
 
+extern "C"
 __global__ static void forward_process(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
 	struct ixmap_packet_cuda *result);
+extern "C"
 __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet);
+extern "C"
 __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet);
 
+extern "C"
 __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
 	unsigned int num_packets)
@@ -59,6 +63,7 @@ packet_drop:
 	return;
 }
 
+extern "C"
 __global__ static void forward_process(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
 	struct ixmap_packet_cuda *result)
@@ -89,6 +94,7 @@ __global__ static void forward_process(struct ixmapfwd_thread *thread,
 	return;
 }
 
+extern "C"
 __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet)
 {
@@ -154,6 +160,7 @@ packet_drop:
 	return -1;
 }
 
+extern "C"
 __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet)
 {

@@ -2,8 +2,10 @@
 #define _IXMAP_CUDA_H
 
 #ifdef __CUDACC__
+extern "C"
 __device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane *plane,
 	unsigned int port_index);
+extern "C"
 __host__ void ixmap_slot_release_cuda(struct ixmap_buf *buf,
 	int slot_index);
 #endif

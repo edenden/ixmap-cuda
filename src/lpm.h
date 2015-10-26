@@ -41,6 +41,7 @@ struct lpm_table {
 };
 
 #ifdef __CUDACC__
+extern "C"
 __device__ struct lpm_entry *lpm_lookup(struct lpm_table *table,
 	void *dst);
 #endif
