@@ -1,14 +1,15 @@
-OBJS = main.o fib.o lpm.o fib_cuda.o lpm_cuda.o
-TARGET = a.out
+OBJS = ixmap.o ixmap_cuda.o
+TARGET = ixmap_cuda.a
 CUDA_PATH = /usr/local/cuda
 
+AR = ar
+ARFLAGS = rv
 NVCC = $(CUDA_PATH)/bin/nvcc
 CUDA_INCLUDE_DIR = $(CUDA_PATH)/include/
 CUDA_LIBRARY_DIR = $(CUDA_PATH)/lib64/
 
-CFLAGS = -I$(CUDA_INCLUDE_DIR) -I../lib/include/
+CFLAGS = -I$(CUDA_INCLUDE_DIR)
 CCFLAGS = -O2 -Wall
-LDFLAGS = -L$(CUDA_LIBRARY_DIR) -L../lib/ -lcuda -lcudart -lixmap -lixmap_cuda
 
 all: $(TARGET)
 
@@ -17,7 +18,7 @@ clean:
 	rm -f $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(CCFLAGS) $(LDFLAGS) $(OBJS) -o $(TARGET)
+	$(AR) $(ARFLAGS) $@ $^
 
 .SUFFIXES: .c .cu .o
 

@@ -13,11 +13,17 @@
 #include <signal.h>
 #include <pthread.h>
 
+#include <cuda_runtime.h>
+
 #include "ixmap.h"
 #include "memory.h"
 
-struct ixmap_desc *ixmap_desc_alloc(struct ixmap_handle **ih_list, int ih_num,
-	int queue_index)
+static int ixmap_dma_unmap(struct ixmap_handle *ih, unsigned long addr_dma);
+static int ixmap_dma_map(struct ixmap_handle *ih, void *addr_virt,
+	unsigned long *addr_dma, unsigned long size);
+
+struct ixmap_desc *ixmap_desc_alloc_cuda(struct ixmap_handle **ih_list,
+	int ih_num, int queue_index)
 {
 	struct ixmap_desc *desc;
 	unsigned long size_tx_desc, size_rx_desc, size_mem;
@@ -139,7 +145,7 @@ err_alloc_desc:
 	return NULL;
 }
 
-void ixmap_desc_release(struct ixmap_handle **ih_list, int ih_num,
+void ixmap_desc_release_cuda(struct ixmap_handle **ih_list, int ih_num,
 	int queue_index, struct ixmap_desc *desc)
 {
 	int i;
@@ -162,7 +168,7 @@ void ixmap_desc_release(struct ixmap_handle **ih_list, int ih_num,
 	return;
 }
 
-struct ixmap_buf *ixmap_buf_alloc(struct ixmap_handle **ih_list,
+struct ixmap_buf *ixmap_buf_alloc_cuda(struct ixmap_handle **ih_list,
 	int ih_num, uint32_t count, uint32_t buf_size)
 {
 	struct ixmap_buf *buf;
@@ -239,7 +245,7 @@ err_alloc_buf:
 	return NULL;
 }
 
-void ixmap_buf_release(struct ixmap_buf *buf,
+void ixmap_buf_release_cuda(struct ixmap_buf *buf,
 	struct ixmap_handle **ih_list, int ih_num)
 {
 	int i, ret;

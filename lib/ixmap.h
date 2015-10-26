@@ -1,5 +1,5 @@
-#ifndef _IXMAP_CUDA_H
-#define _IXMAP_CUDA_H
+#ifndef _IXMAP_H
+#define _IXMAP_H
 
 #include <net/if.h>
 
@@ -92,6 +92,51 @@ enum {
 	IXGBE_DMA_CACHE_WRITECOMBINE
 };
 
+/* Receive Descriptor - Advanced */
+union ixmap_adv_rx_desc {
+	struct {
+		uint64_t pkt_addr; /* Packet buffer address */
+		uint64_t hdr_addr; /* Header buffer address */
+	} read;
+	struct {
+		struct {
+			union {
+				uint32_t data;
+				struct {
+					uint16_t pkt_info; /* RSS, Pkt type */
+					uint16_t hdr_info; /* Splithdr, hdrlen */
+				} hs_rss;
+			} lo_dword;
+			union {
+				uint32_t rss; /* RSS Hash */
+				struct {
+					uint16_t ip_id; /* IP id */
+					uint16_t csum; /* Packet Checksum */
+				} csum_ip;
+			} hi_dword;
+		} lower;
+		struct {
+			uint32_t status_error; /* ext status/error */
+			uint16_t length; /* Packet length */
+			uint16_t vlan; /* VLAN tag */
+		} upper;
+	} wb;  /* writeback */
+};
+
+/* Transmit Descriptor - Advanced */
+union ixmap_adv_tx_desc {
+	struct {
+		uint64_t buffer_addr; /* Address of descriptor's data buf */
+		uint32_t cmd_type_len;
+		uint32_t olinfo_status;
+	} read;
+	struct {
+		uint64_t rsvd; /* Reserved */
+		uint32_t nxtseq_seed;
+		uint32_t status;
+	} wb;
+};
+
 #define IXMAP_MAP		_IOW('U', 210, int)
 struct ixmap_map_req {
 	unsigned long		addr_virt;
@@ -105,4 +150,4 @@ struct ixmap_unmap_req {
 	unsigned long		addr_dma;
 };
 
-#endif /* _IXMAP_CUDA_H */
+#endif /* _IXMAP_H */
