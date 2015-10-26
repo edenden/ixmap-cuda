@@ -4,7 +4,7 @@ lpm.o lpm_cuda.o \
 neigh.o neigh_cuda.o \
 hash.o hash_cuda.o \
 forward.o forward_cuda.o \
-epoll.o netlink.o thread.o cuda.o
+epoll.o netlink.o thread.o iftap.o cuda.o
 
 TARGET = a.out
 CUDA_PATH = /usr/local/cuda
@@ -15,7 +15,7 @@ CUDA_LIBRARY_DIR = $(CUDA_PATH)/lib64/
 
 CFLAGS = -I$(CUDA_INCLUDE_DIR) -I../lib/include/
 CCFLAGS = -O2 -Wall
-LDFLAGS = -L$(CUDA_LIBRARY_DIR) -L../lib/ -lcuda -lcudart -lixmap -lixmap_cuda
+LDFLAGS = -L$(CUDA_LIBRARY_DIR) -lcuda -lcudart -lpthread -lixmap
 
 all: $(TARGET)
 
@@ -24,7 +24,7 @@ clean:
 	rm -f $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(CCFLAGS) $(LDFLAGS) $(OBJS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(CCFLAGS) $(LDFLAGS) $(OBJS) ../lib/ixmap_cuda.a -o $(TARGET)
 
 .SUFFIXES: .c .cu .o
 

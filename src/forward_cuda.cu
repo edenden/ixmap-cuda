@@ -7,10 +7,11 @@
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <stddef.h>
+
+extern "C" {
 #include <ixmap.h>
 #include <ixmap_cuda.h>
 
-extern "C" {
 #include "linux/list_cuda.h"
 #include "main.h"
 #include "forward.h"
@@ -53,7 +54,7 @@ packet_inject:
 		fd = thread->tun_plane->ports[port_index].fd;
 		write(fd, packet[i].slot_buf, packet[i].slot_size);
 packet_drop:
-		ixmap_slot_release(thread->buf, packet[i].slot_index);
+		ixmap_slot_release_cuda(thread->buf, packet[i].slot_index);
 	}
 	return;
 }
@@ -100,7 +101,7 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	int			ret;
 
 	eth = (struct ethhdr *)packet->slot_buf;
-	ip = (struct iphdr *)(packet->slot_buf + sizeof(struct ethhdr));
+	ip = (struct iphdr *)(eth + 1);
 
 	fib_entry = fib_lookup(thread->fib_inet, &ip->daddr);
 	if(!fib_entry)
@@ -112,7 +113,6 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	switch(fib_entry->type){
 	case FIB_TYPE_LOCAL:
 		goto packet_local;
-		break;
 	case FIB_TYPE_LINK:
 		neigh_entry = neigh_lookup(
 			thread->neigh_inet[fib_entry->port_index],
@@ -165,7 +165,7 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	int			ret;
 
 	eth = (struct ethhdr *)packet->slot_buf;
-	ip6 = (struct ip6_hdr *)(packet->slot_buf + sizeof(struct ethhdr));
+	ip6 = (struct ip6_hdr *)(eth + 1);
 
 	if(ip6->ip6_dst.s6_addr[0] == 0xfe
 	&& (ip6->ip6_dst.s6_addr[1] & 0xc0) == 0x80)
@@ -181,7 +181,6 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	switch(fib_entry->type){
 	case FIB_TYPE_LOCAL:
 		goto packet_local;
-		break;
 	case FIB_TYPE_LINK:
 		neigh_entry = neigh_lookup(
 			thread->neigh_inet6[fib_entry->port_index],

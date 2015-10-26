@@ -4,6 +4,8 @@
 #ifdef __CUDACC__
 __device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane *plane,
 	unsigned int port_index);
+__host__ void ixmap_slot_release_cuda(struct ixmap_buf *buf,
+	int slot_index);
 #endif
 
 struct ixmap_desc *ixmap_desc_alloc_cuda(struct ixmap_handle **ih_list,

@@ -5,7 +5,6 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <stddef.h>
-#include <ixmap.h>
 
 extern "C" {
 #include "linux/list_cuda.h"
