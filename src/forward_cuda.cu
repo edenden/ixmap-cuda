@@ -20,25 +20,25 @@ __global__ void forward_process(struct ixmapfwd_thread *thread,
 	struct ixmap_packet_cuda *result)
 {
 	struct ethhdr *eth;
-	int ret, i;
+	int ret, index;
 
-	i = index;
+	index = blockIdx * threadIdx;
 
-	eth = (struct ethhdr *)packet[i].slot_buf;
+	eth = (struct ethhdr *)packet[index].slot_buf;
 	switch(ntohs(eth->h_proto)){
 	case ETH_P_ARP:
-		result[i].outif = -2;
+		result[index].outif = -2;
 		break;
 	case ETH_P_IP:
-		result[i].outif =
-			forward_ip_process(thread, port_index, &packet[i]);
+		result[index].outif =
+			forward_ip_process(thread, port_index, &packet[index]);
 		break;
 	case ETH_P_IPV6:
-		result[i].outif =
-			forward_ip6_process(thread, port_index, &packet[i]);
+		result[index].outif =
+			forward_ip6_process(thread, port_index, &packet[index]);
 		break;
 	default:
-		result[i].outif = -1;
+		result[index].outif = -1;
 		break;
 	}
 

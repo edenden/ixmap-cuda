@@ -14,14 +14,15 @@
 #include "thread.h"
 
 void forward_process_offload(struct ixmapfwd_thread *thread, unsigned int port_index,
-	struct ixmap_packet *packet)
+	struct ixmap_packet *packet, unsigned int num_packets)
 {
-	struct ixmap_packet_cuda result[512];
+	struct ixmap_packet_cuda result[IXMAP_RX_BUDGET];
 	int fd, i;
 
-	forward_process<<<1, 512>>>(thread, port_index, packet, &result);
+	forward_process<<<CUDA_NMPROCS, CUDA_NTHREADS>>>
+		(thread, port_index, packet, &result);
 
-	for(i = 0; i < 512; i++){
+	for(i = 0; i < num_packets; i++){
 		if(result[i].outif >= 0){
 			ixmap_tx_assign(thread->plane, result[i].outif,
 				thread->buf, &packet[i]);
@@ -34,7 +35,7 @@ void forward_process_offload(struct ixmapfwd_thread *thread, unsigned int port_i
 		continue;
 packet_inject:
 		fd = thread->tun_plane->ports[port_index].fd;
-		write(fd, packet->slot_buf, packet->slot_size);
+		write(fd, packet[i].slot_buf, packet[i].slot_size);
 packet_drop:
 		ixmap_slot_release(thread->buf, packet[i].slot_index);
 	}

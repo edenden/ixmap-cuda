@@ -31,6 +31,10 @@
 #define IXMAP_RX_BUDGET 1024
 #define IXMAP_TX_BUDGET 4096
 
+#define CUDA_NMPROCS_SHIFT 2
+#define CUDA_NMPROCS (1 << CUDA_NMPROC_SHIFT)
+#define CUDA_NTHREADS (IXMAP_RX_BUDGET >> CUDA_NMPROC_SHIFT)
+
 struct ixmapfwd {
 	struct ixmap_handle	**ih_array;
 	struct tun_handle	**tunh_array;
