@@ -9,38 +9,10 @@
 #include <stddef.h>
 #include <ixmap.h>
 
+#include "linux/list.h"
 #include "main.h"
 #include "forward.h"
 #include "thread.h"
-
-void forward_process_offload(struct ixmapfwd_thread *thread, unsigned int port_index,
-	struct ixmap_packet *packet, unsigned int num_packets)
-{
-	struct ixmap_packet_cuda result[IXMAP_RX_BUDGET];
-	int fd, i;
-
-	forward_process<<<CUDA_NMPROCS, CUDA_NTHREADS>>>
-		(thread, port_index, packet, &result);
-
-	for(i = 0; i < num_packets; i++){
-		if(result[i].outif >= 0){
-			ixmap_tx_assign(thread->plane, result[i].outif,
-				thread->buf, &packet[i]);
-		}else if(result[i].outif == -1){
-			goto packet_drop;
-		}else{
-			goto packet_inject;
-		}
-
-		continue;
-packet_inject:
-		fd = thread->tun_plane->ports[port_index].fd;
-		write(fd, packet[i].slot_buf, packet[i].slot_size);
-packet_drop:
-		ixmap_slot_release(thread->buf, packet[i].slot_index);
-	}
-	return;
-}
 
 void forward_process_tun(struct ixmapfwd_thread *thread, unsigned int port_index,
 	uint8_t *read_buf, unsigned int read_size)

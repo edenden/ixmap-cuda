@@ -10,8 +10,6 @@ extern "C" {
 #include "linux/list_cuda.h"
 #include "fib.h"
 #include "lpm.h"
-#include "fib_cuda.h"
-#include "lpm_cuda.h"
 }
 
 __device__ struct fib_entry *fib_lookup(struct fib *fib, void *destination)
@@ -22,7 +20,7 @@ __device__ struct fib_entry *fib_lookup(struct fib *fib, void *destination)
 	if(!entry)
 		goto err_lpm_lookup;
 
-	return entry->ptr;
+	return (struct fib_entry *)entry->ptr;
 
 err_lpm_lookup:
 	return NULL;

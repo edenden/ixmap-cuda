@@ -9,11 +9,13 @@
 struct lpm_entry {
 	struct list_head	list;
 	void			*ptr;
+	struct ixmap_marea	*area;
 };
 
 struct lpm_node {
 	struct list_head	head;
 	struct lpm_node		*next_table;
+	struct ixmap_marea	*area;
 };
 
 struct lpm_table {
@@ -37,6 +39,11 @@ struct lpm_table {
 				void *
 				);
 };
+
+#ifdef __CUDACC__
+__device__ struct lpm_entry *lpm_lookup(struct lpm_table *table,
+	void *dst);
+#endif
 
 void lpm_init(struct lpm_table *table);
 int lpm_add(struct lpm_table *table, void *prefix,

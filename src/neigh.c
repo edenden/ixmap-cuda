@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <ixmap.h>
 
+#include "linux/list.h"
 #include "main.h"
 #include "neigh.h"
 

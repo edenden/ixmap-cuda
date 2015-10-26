@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 extern "C" {
-#include "linux/list.h"
+#include "linux/list_cuda.h"
 #include "main.h"
 #include "hash.h"
 }

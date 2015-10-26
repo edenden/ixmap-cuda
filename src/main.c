@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <syslog.h>
 #include <ixmap.h>
+#include <ixmap_cuda.h>
 
 #include "linux/list.h"
 #include "main.h"
@@ -145,7 +146,7 @@ int main(int argc, char **argv)
 	}
 
 	for(i = 0; i < ixmapfwd.num_cores; i++, desc_assigned++){
-		threads[i].desc = ixmap_desc_alloc(ixmapfwd.ih_array,
+		threads[i].desc = ixmap_desc_alloc_cuda(ixmapfwd.ih_array,
 			ixmapfwd.num_ports, i);
 		if(!threads[i].desc){
 			ixmapfwd_log(LOG_ERR, "failed to ixmap_alloc_descring, idx = %d", i);
@@ -180,7 +181,7 @@ int main(int argc, char **argv)
 	}
 
 	for(i = 0; i < ixmapfwd.num_cores; i++, cores_assigned++){
-		threads[i].buf = ixmap_buf_alloc(ixmapfwd.ih_array,
+		threads[i].buf = ixmap_buf_alloc_cuda(ixmapfwd.ih_array,
 			ixmapfwd.num_ports, ixmapfwd.buf_count, ixmapfwd.buf_size);
 		if(!threads[i].buf){
 			ixmapfwd_log(LOG_ERR, "failed to ixmap_alloc_buf, idx = %d", i);
@@ -211,7 +212,7 @@ err_thread_create:
 err_tun_plane_alloc:
 		ixmap_plane_release(threads[i].plane);
 err_plane_alloc:
-		ixmap_buf_release(threads[i].buf,
+		ixmap_buf_release_cuda(threads[i].buf,
 			ixmapfwd.ih_array, ixmapfwd.num_ports);
 err_buf_alloc:
 		ret = -1;
@@ -230,7 +231,7 @@ err_assign_cores:
 		ixmapfwd_thread_kill(&threads[i]);
 		tun_plane_release(threads[i].tun_plane);
 		ixmap_plane_release(threads[i].plane);
-		ixmap_buf_release(threads[i].buf,
+		ixmap_buf_release_cuda(threads[i].buf,
 			ixmapfwd.ih_array, ixmapfwd.num_ports);
 	}
 err_set_signal:
@@ -240,7 +241,7 @@ err_tun_open:
 	}
 err_desc_alloc:
 	for(i = 0; i < desc_assigned; i++){
-		ixmap_desc_release(ixmapfwd.ih_array,
+		ixmap_desc_release_cuda(ixmapfwd.ih_array,
 			ixmapfwd.num_ports, i, threads[i].desc);
 	}
 err_open:

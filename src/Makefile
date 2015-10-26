@@ -1,4 +1,11 @@
-OBJS = main.o fib.o lpm.o fib_cuda.o lpm_cuda.o
+OBJS = main.o \
+fib.o fib_cuda.o \
+lpm.o lpm_cuda.o \
+neigh.o neigh_cuda.o \
+hash.o hash_cuda.o \
+forward.o forward_cuda.o \
+epoll.o netlink.o thread.o cuda.o
+
 TARGET = a.out
 CUDA_PATH = /usr/local/cuda
 
@@ -22,7 +29,7 @@ $(TARGET): $(OBJS)
 .SUFFIXES: .c .cu .o
 
 .cu.o:
-	$(NVCC) $(CFLAGS) --x cu --compile $< -o $@
+	$(NVCC) $(CFLAGS) --x cu --compile --relocatable-device-code=true $< -o $@
 
 .c.o:
 	$(CC) $(CFLAGS) $(CCFLAGS) -c $< -o $@

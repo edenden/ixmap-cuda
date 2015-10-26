@@ -18,12 +18,18 @@ struct fib_entry {
 	int			port_index; /* -1 means not ixmap interface */
 	enum fib_type		type;
 	int			id;
+	struct ixmap_marea	*area;
 	unsigned int		refcount;
 };
 
 struct fib {
 	struct lpm_table	table;
+	struct ixmap_marea	*area;
 };
+
+#ifdef __CUDACC__
+__device__ struct fib_entry *fib_lookup(struct fib *fib, void *destination);
+#endif
 
 struct fib *fib_alloc(struct ixmap_desc *desc);
 void fib_release(struct fib *fib);

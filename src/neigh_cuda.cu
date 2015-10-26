@@ -7,8 +7,13 @@
 #include <stddef.h>
 #include <ixmap.h>
 
+extern "C" {
+#include "linux/list_cuda.h"
+
 #include "main.h"
 #include "neigh.h"
+#include "hash.h"
+}
 
 __device__ unsigned int neigh_key_generate_v4(void *key, unsigned int bit_len)
 {

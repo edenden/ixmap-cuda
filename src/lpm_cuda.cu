@@ -9,15 +9,13 @@ extern "C" {
 #include "linux/list_cuda.h"
 #include "main.h"
 #include "lpm.h"
-#include "lpm_cuda.h"
+#include "cuda.h"
 }
 
-__device__ uint32_t bswap_32(uint32_t x) {
-	x = ((x << 8) & 0xFF00FF00) | ((x >> 8) & 0x00FF00FF);
-	return (x >> 16) | (x << 16);
-}
+__device__ static unsigned int lpm_index_cuda(void *prefix,
+	unsigned int offset, unsigned int range);
 
-__device__ unsigned int lpm_index_cuda(void *prefix,
+__device__ static unsigned int lpm_index_cuda(void *prefix,
 	unsigned int offset, unsigned int range)
 {
 	unsigned int shift, word, mask;
@@ -29,12 +27,7 @@ __device__ unsigned int lpm_index_cuda(void *prefix,
 	return (bswap_32(((uint32_t *)prefix)[word]) >> shift) & mask;
 }
 
-__device__ int list_empty_cuda(const struct list_head *head)
-{
-	return head->next == head;
-}
-
-__global__ struct lpm_entry *lpm_lookup(struct lpm_table *table,
+__device__ struct lpm_entry *lpm_lookup(struct lpm_table *table,
 	void *dst)
 {
 	unsigned int index;

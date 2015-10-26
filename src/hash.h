@@ -1,7 +1,6 @@
 #ifndef _IXMAPFWD_HASH_H
 #define _IXMAPFWD_HASH_H
 
-#include "linux/list.h"
 #include "main.h"
 
 #define HASH_BIT 16
@@ -30,13 +29,16 @@ struct hash_table {
 				);
 };
 
+#ifdef __CUDACC__
+__device__ struct hash_entry *hash_lookup(struct hash_table *table,
+	void *key);
+#endif
+
 void hash_init(struct hash_table *table);
 int hash_add(struct hash_table *table, void *key,
 	struct hash_entry *entry_new);
 int hash_delete(struct hash_table *table,
 	void *key);
 void hash_delete_all(struct hash_table *table);
-struct hash_entry *hash_lookup(struct hash_table *table,
-	void *key);
 
 #endif /* _IXMAPFWD_HASH_H */

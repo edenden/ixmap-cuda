@@ -3,7 +3,6 @@
 
 #include <pthread.h>
 #include <ixmap.h>
-#include <config.h>
 
 #define min(x, y) ({				\
 	typeof(x) _min1 = (x);			\
@@ -32,8 +31,8 @@
 #define IXMAP_TX_BUDGET 4096
 
 #define CUDA_NMPROCS_SHIFT 2
-#define CUDA_NMPROCS (1 << CUDA_NMPROC_SHIFT)
-#define CUDA_NTHREADS (IXMAP_RX_BUDGET >> CUDA_NMPROC_SHIFT)
+#define CUDA_NMPROCS (1 << CUDA_NMPROCS_SHIFT)
+#define CUDA_NTHREADS (IXMAP_RX_BUDGET >> CUDA_NMPROCS_SHIFT)
 
 struct ixmapfwd {
 	struct ixmap_handle	**ih_array;

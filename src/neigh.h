@@ -20,13 +20,16 @@ struct neigh_entry {
 	struct ixmap_marea	*area;
 };
 
+#ifdef __CUDACC__
+__device__ struct neigh_entry *neigh_lookup(struct neigh_table *neigh,
+	void *dst_addr);
+#endif
+
 struct neigh_table *neigh_alloc(struct ixmap_desc *desc, int family);
 void neigh_release(struct neigh_table *neigh);
 int neigh_add(struct neigh_table *neigh, int family,
 	void *dst_addr, void *mac_addr, struct ixmap_desc *desc);
 int neigh_delete(struct neigh_table *neigh, int family,
-	void *dst_addr);
-struct neigh_entry *neigh_lookup(struct neigh_table *neigh,
 	void *dst_addr);
 
 #endif /* _IXMAPFWD_NEIGH_H */

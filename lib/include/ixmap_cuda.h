@@ -1,6 +1,11 @@
 #ifndef _IXMAP_CUDA_H
 #define _IXMAP_CUDA_H
 
+#ifdef __CUDACC__
+__device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane *plane,
+	unsigned int port_index);
+#endif
+
 struct ixmap_desc *ixmap_desc_alloc_cuda(struct ixmap_handle **ih_list,
 	int ih_num, int queue_index);
 void ixmap_desc_release_cuda(struct ixmap_handle **ih_list, int ih_num,

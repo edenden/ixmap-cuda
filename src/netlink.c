@@ -9,6 +9,7 @@
 #include <syslog.h>
 #include <linux/if_ether.h>
 
+#include "linux/list.h"
 #include "main.h"
 #include "thread.h"
 #include "netlink.h"
