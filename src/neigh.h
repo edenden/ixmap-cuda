@@ -22,7 +22,19 @@ struct neigh_entry {
 
 #ifdef __CUDACC__
 extern "C"
-__device__ struct neigh_entry *neigh_lookup(struct neigh_table *neigh,
+__device__ unsigned int neigh_key_generate_v4_cuda(void *key,
+	unsigned int bit_len);
+extern "C"
+__device__ unsigned int neigh_key_generate_v6_cuda(void *key,
+	unsigned int bit_len);
+extern "C"
+__device__ int neigh_key_compare_v4_cuda(void *key_tgt, void *key_ent);
+extern "C"
+__device__ int neigh_key_compare_v6_cuda(void *key_tgt, void *key_ent);
+extern "C"
+__device__ struct neigh_entry *neigh_lookup_v4(struct neigh_table *neigh,
+	void *dst_addr);
+__device__ struct neigh_entry *neigh_lookup_v6(struct neigh_table *neigh,
 	void *dst_addr);
 #endif
 

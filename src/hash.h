@@ -27,11 +27,22 @@ struct hash_table {
 				void *,
 				void *
 				);
+	unsigned int		(*hash_key_generate_cuda)(
+				void *,
+				unsigned int
+				);
+	int			(*hash_key_compare_cuda)(
+				void *,
+				void *
+				);
 };
 
 #ifdef __CUDACC__
 extern "C"
-__device__ struct hash_entry *hash_lookup(struct hash_table *table,
+__device__ struct hash_entry *hash_lookup_v4(struct hash_table *table,
+	void *key);
+extern "C"
+__device__ struct hash_entry *hash_lookup_v6(struct hash_table *table,
 	void *key);
 #endif
 

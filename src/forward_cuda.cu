@@ -120,12 +120,12 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	case FIB_TYPE_LOCAL:
 		goto packet_local;
 	case FIB_TYPE_LINK:
-		neigh_entry = neigh_lookup(
+		neigh_entry = neigh_lookup_v4(
 			thread->neigh_inet[fib_entry->port_index],
 			&ip->daddr);
 		break;
 	case FIB_TYPE_FORWARD:
-		neigh_entry = neigh_lookup(
+		neigh_entry = neigh_lookup_v4(
 			thread->neigh_inet[fib_entry->port_index],
 			fib_entry->nexthop);
 		break;
@@ -189,12 +189,12 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	case FIB_TYPE_LOCAL:
 		goto packet_local;
 	case FIB_TYPE_LINK:
-		neigh_entry = neigh_lookup(
+		neigh_entry = neigh_lookup_v6(
 			thread->neigh_inet6[fib_entry->port_index],
 			&ip6->ip6_dst);
 		break;
 	case FIB_TYPE_FORWARD:
-		neigh_entry = neigh_lookup(
+		neigh_entry = neigh_lookup_v6(
 			thread->neigh_inet6[fib_entry->port_index],
 			fib_entry->nexthop);
 		break;
