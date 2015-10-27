@@ -27,14 +27,6 @@ struct hash_table {
 				void *,
 				void *
 				);
-	unsigned int		(*hash_key_generate_cuda)(
-				void *,
-				unsigned int
-				);
-	int			(*hash_key_compare_cuda)(
-				void *,
-				void *
-				);
 };
 
 #ifdef __CUDACC__
