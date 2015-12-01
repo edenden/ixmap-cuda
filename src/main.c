@@ -283,7 +283,7 @@ err_alloc_threads:
 err_tunh_array:
 	free(ixmapfwd.ih_array);
 err_ih_array:
-	if(!nh){
+	if(nh){
 		nvmap_close(nh);
 	}
 err_nh_open:
