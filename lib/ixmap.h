@@ -6,6 +6,7 @@
 #define ALIGN(x,a)		__ALIGN_MASK(x,(typeof(x))(a)-1)
 #define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
 
+#define FILENAME_SIZE 256
 #define SIZE_1GB (1ul << 30)
 #define SIZE_256MB (1ul << 28)
 
@@ -86,6 +87,10 @@ struct ixmap_plane {
 	struct ixmap_port 	*ports;
 };
 
+struct nvmap_handle {
+ 	int			fd;
+};
+
 enum {
 	IXGBE_DMA_CACHE_DEFAULT = 0,
 	IXGBE_DMA_CACHE_DISABLE,
@@ -147,6 +152,18 @@ struct ixmap_map_req {
 
 #define IXMAP_UNMAP		_IOW('U', 211, int)
 struct ixmap_unmap_req {
+	unsigned long		addr_dma;
+};
+
+#define NVMAP_MAP		_IOW('U', 210, int)
+struct nvmap_map_req {
+	unsigned long		addr_virt;
+	unsigned long		addr_dma;
+	unsigned long		size;
+};
+
+#define NVMAP_UNMAP		_IOW('U', 211, int)
+struct nvmap_unmap_req {
 	unsigned long		addr_dma;
 };
 
