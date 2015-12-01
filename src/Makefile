@@ -24,7 +24,7 @@ clean:
 	rm -f $(TARGET)
 
 $(TARGET): $(OBJS)
-	nvcc $(OBJS) ../lib/ixmap_cuda.a $(LDFLAGS) -o $(TARGET)
+	$(NVCC) $(OBJS) ../lib/ixmap_cuda.a $(LDFLAGS) -o $(TARGET)
 
 .SUFFIXES: .c .cu .o
 
