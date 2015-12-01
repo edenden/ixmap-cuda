@@ -23,9 +23,9 @@ struct nvmap_handle;
 
 struct nvmap_handle *nvmap_open(void);
 void nvmap_close(struct nvmap_handle *nh);
-struct ixmap_buf *ixmap_buf_alloc_gpu(struct nvmap_handle *nh,
+struct ixmap_buf *ixmap_buf_alloc_cuda_direct(struct nvmap_handle *nh,
 	int ih_num, uint32_t count, uint32_t buf_size);
-void ixmap_buf_release_gpu(struct ixmap_buf *buf,
+void ixmap_buf_release_cuda_direct(struct ixmap_buf *buf,
 	struct nvmap_handle *nh, int ih_num);
 
 #endif /* _IXMAP_CUDA_H */

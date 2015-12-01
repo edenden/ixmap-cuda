@@ -24,9 +24,40 @@
 static int ixmap_dma_unmap(struct ixmap_handle *ih, unsigned long addr_dma);
 static int ixmap_dma_map(struct ixmap_handle *ih, void *addr_virt,
 	unsigned long *addr_dma, unsigned long size);
-static int nvmap_dma_map(struct nvmap_handle *nh, void *addr_virt,
+static int ixmap_dma_unmap_direct(struct nvmap_handle *nh, unsigned long addr_dma);
+static int ixmap_dma_map_direct(struct nvmap_handle *nh, void *addr_virt,
 	unsigned long *addr_dma, unsigned long size);
-static int nvmap_dma_unmap(struct nvmap_handle *nh, unsigned long addr_dma);
+
+struct nvmap_handle *nvmap_open(void)
+{
+	struct nvmap_handle *nh;
+	char filename[FILENAME_SIZE];
+
+	nh = malloc(sizeof(struct nvmap_handle));
+	if (!nh)
+		goto err_alloc_nh;
+	memset(nh, 0, sizeof(struct nvmap_handle));
+
+	snprintf(filename, sizeof(filename), "/dev/nvmap");
+	nh->fd = open(filename, O_RDWR);
+	if (nh->fd < 0)
+		goto err_open;
+
+	return nh;
+
+err_open:
+	free(nh);
+err_alloc_nh:
+	return NULL;
+}
+
+void nvmap_close(struct nvmap_handle *nh)
+{
+	close(nh->fd);
+	free(nh);
+
+	return;
+}
 
 struct ixmap_desc *ixmap_desc_alloc_cuda(struct ixmap_handle **ih_list,
 	int ih_num, int queue_index)
@@ -310,9 +341,9 @@ struct ixmap_buf *ixmap_buf_alloc_cuda_direct(struct nvmap_handle *nh,
 	if(cuda_stat != CUDA_SUCCESS)
 		goto err_cuda_setattr;
 
-	ret = nvmap_dma_map(nh, addr_virt, &addr_dma, size);
+	ret = ixmap_dma_map_direct(nh, addr_virt, &addr_dma, size);
 	if(ret < 0)
-		goto err_nvmap_dma_map;
+		goto err_ixmap_dma_map;
 
 	for(i = 0; i < ih_num; i++){
 		buf->addr_dma[i] = addr_dma;
@@ -334,8 +365,8 @@ struct ixmap_buf *ixmap_buf_alloc_cuda_direct(struct nvmap_handle *nh,
 	return buf;
 
 err_alloc_slots:
-	nvmap_dma_unmap(nh, addr_dma);
-err_nvmap_dma_map:
+	ixmap_dma_unmap_direct(nh, addr_dma);
+err_ixmap_dma_map:
 err_cuda_setattr:
 	cudaFree(addr_virt);
 err_cuda_malloc:
@@ -344,37 +375,6 @@ err_alloc_buf_addr_dma:
 	free(buf);
 err_alloc_buf:
 	return NULL;
-}
-
-struct nvmap_handle *nvmap_open(void)
-{
-	struct nvmap_handle *nh;
-	char filename[FILENAME_SIZE];
-
-	nh = malloc(sizeof(struct nvmap_handle));
-	if (!nh)
-		goto err_alloc_nh;
-	memset(nh, 0, sizeof(struct nvmap_handle));
-
-	snprintf(filename, sizeof(filename), "/dev/nvmap");
-	nh->fd = open(filename, O_RDWR);
-	if (nh->fd < 0)
-		goto err_open;
-
-	return nh;
-
-err_open:
-	free(nh);
-err_alloc_nh:
-	return NULL;
-}
-
-void nvmap_close(struct nvmap_handle *nh)
-{
-	close(nh->fd);
-	free(nh);
-
-	return;
 }
 
 void ixmap_buf_release_cuda_direct(struct ixmap_buf *buf,
@@ -393,7 +393,7 @@ void ixmap_buf_release_cuda_direct(struct ixmap_buf *buf,
 		}
 	}
 
-	ret = nvmap_dma_unmap(nh, buf->addr_dma[0]);
+	ret = ixmap_dma_unmap_direct(nh, buf->addr_dma[0]);
 	if(ret < 0)
 		perror("failed to unmap buf");
 
@@ -433,7 +433,7 @@ static int ixmap_dma_unmap(struct ixmap_handle *ih, unsigned long addr_dma)
 	return 0;
 }
 
-static int nvmap_dma_map(struct nvmap_handle *nh, void *addr_virt,
+static int ixmap_dma_map_direct(struct nvmap_handle *nh, void *addr_virt,
 	unsigned long *addr_dma, unsigned long size)
 {
 	struct nvmap_map_req req_map;
@@ -449,7 +449,7 @@ static int nvmap_dma_map(struct nvmap_handle *nh, void *addr_virt,
 	return 0;
 }
 
-static int nvmap_dma_unmap(struct nvmap_handle *nh, unsigned long addr_dma)
+static int ixmap_dma_unmap_direct(struct nvmap_handle *nh, unsigned long addr_dma)
 {
 	struct nvmap_unmap_req req_unmap;
 
