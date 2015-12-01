@@ -72,7 +72,7 @@ dma_addr_t nvmap_dma_map(struct nvmap_info *info,
 	struct list_head *where;
 	struct nvidia_p2p_page_table *page_table;
 	unsigned long user_start, user_end, user_length;
-	unsigned int i;
+	unsigned int i, page_size;
 	int ret;
 	dma_addr_t addr_dma;
 	struct nvmap_cb_data *cb_data;
@@ -93,9 +93,23 @@ dma_addr_t nvmap_dma_map(struct nvmap_info *info,
 		goto err_get_user_pages;
 	}
 
+	switch(page_table->page_size){
+	case NVIDIA_P2P_PAGE_SIZE_4KB:
+		page_size = 4 * 1024;
+		break;
+	case NVIDIA_P2P_PAGE_SIZE_64KB:
+		page_size = 64 * 1024;
+		break;
+	case NVIDIA_P2P_PAGE_SIZE_128KB:
+		page_size = 128 * 1024;
+		break;
+	default:
+		goto err_invalid_page_size;
+	}
+
 	for(i = 0; i < page_table->entries; i++){
 		if(i + 1 < page_table->entries &&
-		page_table->pages[i]->physical_address + page_table->page_size
+		page_table->pages[i]->physical_address + page_size
 		!= page_table->pages[i + 1]->physical_address){
 			pr_err("ERR: non-contiguous dma area\n");
 			goto err_get_user_pages_not_contiguous;
@@ -126,8 +140,8 @@ dma_addr_t nvmap_dma_map(struct nvmap_info *info,
 err_alloc_area:
 err_area_whereto:
 err_get_user_pages_not_contiguous:
+err_invalid_page_size:
 	nvidia_p2p_put_pages(0, 0, user_start, page_table);
-	nvidia_p2p_free_page_table(page_table);
 err_get_user_pages:
 	kfree(cb_data);
 err_alloc_cb_data:
@@ -224,7 +238,6 @@ static void nvmap_dma_area_free(struct nvmap_info *info,
 	page_table = area->page_table;
 
 	nvidia_p2p_put_pages(0, 0, user_start, page_table);
-	nvidia_p2p_free_page_table(page_table);
 
 	kfree(area->cb_data);
 	kfree(area);
