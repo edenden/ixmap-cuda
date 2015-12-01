@@ -301,6 +301,7 @@ static int ixmapfwd_thread_create(struct ixmapfwd *ixmapfwd,
 	thread->index		= thread_index;
 	thread->num_ports	= ixmapfwd->num_ports;
 	thread->ptid		= pthread_self();
+	thread->gpudirect	= ixmapfwd->gpudirect;
 
 	ret = pthread_create(&thread->tid, NULL, thread_process_interrupt, thread);
 	if(ret < 0){

@@ -9,6 +9,9 @@
 #include <stddef.h>
 #include <ixmap.h>
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 #include "linux/list.h"
 #include "main.h"
 #include "forward.h"
@@ -29,7 +32,11 @@ void forward_process_tun(struct ixmapfwd_thread *thread, unsigned int port_index
 	}
 
 	packet.slot_buf = ixmap_slot_addr_virt(thread->buf, packet.slot_index);
-	memcpy(packet.slot_buf, read_buf, read_size);
+	if(thread->gpudirect){
+		cudaMemcpy(packet.slot_buf, read_buf, read_size, cudaMemcpyHostToDevice);
+	}else{
+		memcpy(packet.slot_buf, read_buf, read_size);
+	}
 	packet.slot_size = read_size;
 
 #ifdef DEBUG

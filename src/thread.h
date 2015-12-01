@@ -23,6 +23,7 @@ struct ixmapfwd_thread {
 	unsigned int		num_ports;
 	struct ixmap_marea	*neigh_inet_area;
 	struct ixmap_marea	*neigh_inet6_area;
+	int			gpudirect;
 };
 
 void *thread_process_interrupt(void *data);
