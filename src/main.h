@@ -43,6 +43,7 @@ struct ixmapfwd {
 	unsigned int		promisc;
 	unsigned int		mtu_frame;
 	unsigned int		buf_count;
+	unsigned int		gpudirect;
 	unsigned short		intr_rate;
 };
 

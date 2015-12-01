@@ -37,6 +37,7 @@ static void usage()
 	printf("  -m [n] : MTU length (default=1522)\n");
 	printf("  -c [n] : Number of packet buffer per port\n");
 	printf("  -p : Promiscuous mode (default=disabled)\n");
+	printf("  -g : GPUDirect mode\n");
 	printf("  -h : Show this help\n");
 	printf("\n");
 	return;
@@ -46,6 +47,7 @@ int main(int argc, char **argv)
 {
 	struct ixmapfwd		ixmapfwd;
 	struct ixmapfwd_thread	*threads;
+	struct nvmap_handle	*nh = NULL;
 	int			ret, i, signal, opt;
 	int			cores_assigned = 0,
 				ports_assigned = 0,
@@ -61,8 +63,9 @@ int main(int argc, char **argv)
 	ixmapfwd.mtu_frame	= 0; /* MTU=1522 is used by default. */
 	ixmapfwd.intr_rate	= IXGBE_20K_ITR;
 	ixmapfwd.buf_count	= 8192; /* number of per port packet buffer */
+	ixmapfwd.gpudirect	= 0;
 
-	while ((opt = getopt(argc, argv, "t:n:m:c:ph")) != -1) {
+	while ((opt = getopt(argc, argv, "t:n:m:c:pgh")) != -1) {
 		switch(opt){
 		case 't':
 			if(sscanf(optarg, "%u", &ixmapfwd.num_cores) < 1){
@@ -95,6 +98,9 @@ int main(int argc, char **argv)
 		case 'p':
 			ixmapfwd.promisc = 1;
 			break;
+		case 'g':
+			ixmapfwd.gpudirect = 1;
+			break;
 		case 'h':
 			usage();
 			ret = 0;
@@ -115,6 +121,14 @@ int main(int argc, char **argv)
 	}
 
 	openlog(PROCESS_NAME, LOG_CONS | LOG_PID, SYSLOG_FACILITY);
+
+	if(ixmapfwd.gpudirect){
+		nh = nvmap_open();
+		if(!nh){
+			ret = -1;
+			goto err_nh_open;
+		}
+	}
 
 	ixmapfwd.ih_array = malloc(sizeof(struct ixmap_handle *) * ixmapfwd.num_ports);
 	if(!ixmapfwd.ih_array){
@@ -181,8 +195,13 @@ int main(int argc, char **argv)
 	}
 
 	for(i = 0; i < ixmapfwd.num_cores; i++, cores_assigned++){
-		threads[i].buf = ixmap_buf_alloc_cuda(ixmapfwd.ih_array,
-			ixmapfwd.num_ports, ixmapfwd.buf_count, ixmapfwd.buf_size);
+		if(ixmapfwd.gpudirect){
+			threads[i].buf = ixmap_buf_alloc_cuda_direct(nh,
+				ixmapfwd.num_ports, ixmapfwd.buf_count, ixmapfwd.buf_size);
+		}else{
+			threads[i].buf = ixmap_buf_alloc_cuda(ixmapfwd.ih_array,
+				ixmapfwd.num_ports, ixmapfwd.buf_count, ixmapfwd.buf_size);
+		}
 		if(!threads[i].buf){
 			ixmapfwd_log(LOG_ERR, "failed to ixmap_alloc_buf, idx = %d", i);
 			ixmapfwd_log(LOG_ERR, "please decrease buffer or enable iommu");
@@ -212,8 +231,13 @@ err_thread_create:
 err_tun_plane_alloc:
 		ixmap_plane_release(threads[i].plane);
 err_plane_alloc:
-		ixmap_buf_release_cuda(threads[i].buf,
-			ixmapfwd.ih_array, ixmapfwd.num_ports);
+		if(ixmapfwd.gpudirect){
+			ixmap_buf_release_cuda_direct(threads[i].buf,
+				nh, ixmapfwd.num_ports);
+		}else{
+			ixmap_buf_release_cuda(threads[i].buf,
+				ixmapfwd.ih_array, ixmapfwd.num_ports);
+		}
 err_buf_alloc:
 		ret = -1;
 		goto err_assign_cores;
@@ -231,8 +255,13 @@ err_assign_cores:
 		ixmapfwd_thread_kill(&threads[i]);
 		tun_plane_release(threads[i].tun_plane);
 		ixmap_plane_release(threads[i].plane);
-		ixmap_buf_release_cuda(threads[i].buf,
-			ixmapfwd.ih_array, ixmapfwd.num_ports);
+		if(ixmapfwd.gpudirect){
+			ixmap_buf_release_cuda_direct(threads[i].buf,
+				nh, ixmapfwd.num_ports);
+		}else{
+			ixmap_buf_release_cuda(threads[i].buf,
+				ixmapfwd.ih_array, ixmapfwd.num_ports);
+		}
 	}
 err_set_signal:
 err_tun_open:
@@ -254,6 +283,10 @@ err_alloc_threads:
 err_tunh_array:
 	free(ixmapfwd.ih_array);
 err_ih_array:
+	if(!nh){
+		nvmap_close(nh);
+	}
+err_nh_open:
 	closelog();
 err_arg:
 	return ret;
