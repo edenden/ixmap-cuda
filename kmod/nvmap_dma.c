@@ -85,10 +85,11 @@ dma_addr_t nvmap_dma_map(struct nvmap_info *info,
 	if(!cb_data)
 		goto err_alloc_cb_data;
 
+	pr_info("get pages start = %p, length = %lu\n", (void *)user_start, user_length);
 	ret = nvidia_p2p_get_pages(0, 0, user_start, user_length, &page_table,
 		nvmap_dma_callback, cb_data);
 	if(ret < 0){
-		pr_err("ERR: failed to get pages\n");
+		pr_err("ERR: failed to get pages, ret = %d\n", ret);
 		goto err_get_user_pages;
 	}
 
