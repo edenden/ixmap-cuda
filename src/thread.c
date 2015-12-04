@@ -145,8 +145,15 @@ static int thread_wait(struct ixmapfwd_thread *thread,
         struct ixmap_irqdev_handle *irqh;
         struct epoll_event events[EPOLL_MAXEVENTS];
 	struct ixmap_packet packet[IXMAP_RX_BUDGET];
+	struct ixmap_packet_cuda *result;
         int i, ret, num_fd;
         unsigned int port_index;
+	cudaError_t ret_cuda;
+
+	ret_cuda = cudaMallocManaged((void **)&result,
+		sizeof(struct ixmap_packet_cuda) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
+		goto err_alloc_result;
 
 	while(1){
 		num_fd = epoll_wait(fd_ep, events, EPOLL_MAXEVENTS, -1);
@@ -166,7 +173,8 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 				ret = ixmap_rx_clean(thread->plane, port_index,
 					thread->buf, packet);
 
-				forward_process_offload(thread, port_index, packet, ret);
+				forward_process_offload(thread, port_index, packet, ret,
+					result);
 
 				for(i = 0; i < thread->num_ports; i++){
 					ixmap_tx_xmit(thread->plane, i);
@@ -227,9 +235,12 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 	}
 
 out:
+	cudaFree(result);
 	return 0;
 
 err_read:
+	cudaFree(result);
+err_alloc_result:
 	return -1;
 }
 

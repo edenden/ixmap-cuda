@@ -35,9 +35,8 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 extern "C"
 __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
-	unsigned int num_packets)
+	unsigned int num_packets, struct ixmap_packet_cuda *result)
 {
-	struct ixmap_packet_cuda result[IXMAP_RX_BUDGET];
 	int fd, i;
 
 	forward_process<<<CUDA_NMPROCS, CUDA_NTHREADS>>>
