@@ -68,7 +68,7 @@ void *thread_process_interrupt(void *data)
         if(ret_cuda != cudaSuccess)
 		goto err_neigh_table_inet;
 	
-	ret_cuda = cudaMallocManaged((void **)&thread->neigh_inet,
+	ret_cuda = cudaMallocManaged((void **)&thread->neigh_inet6,
 		sizeof(struct neigh *) * thread->num_ports, cudaMemAttachGlobal);
 	if(ret_cuda != cudaSuccess)
 		goto err_neigh_table_inet6;
