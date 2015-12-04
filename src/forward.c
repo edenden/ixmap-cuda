@@ -32,11 +32,7 @@ void forward_process_tun(struct ixmapfwd_thread *thread, unsigned int port_index
 	}
 
 	packet.slot_buf = ixmap_slot_addr_virt(thread->buf, packet.slot_index);
-	if(thread->gpudirect){
-		cudaMemcpy(packet.slot_buf, read_buf, read_size, cudaMemcpyHostToDevice);
-	}else{
-		memcpy(packet.slot_buf, read_buf, read_size);
-	}
+	cudaMemcpy(packet.slot_buf, read_buf, read_size, cudaMemcpyHostToDevice);
 	packet.slot_size = read_size;
 
 #ifdef DEBUG

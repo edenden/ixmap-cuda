@@ -36,6 +36,7 @@ struct ixmap_buf {
 	uint32_t		buf_size;
 	uint32_t		count;
 	int32_t			*slots;
+	void			*addr_temp; // unnecessary in GPUDirect mode
 };
 
 struct ixmap_handle {

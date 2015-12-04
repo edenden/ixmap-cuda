@@ -62,7 +62,7 @@ struct ixmap_buf *ixmap_buf_alloc_cuda(struct ixmap_handle **ih_list,
 	int ih_num, uint32_t count, uint32_t buf_size)
 {
 	struct ixmap_buf *buf;
-	void	*addr_virt;
+	void	*addr_virt, *addr_cuda;
 	unsigned long addr_dma, size;
 	int *slots;
 	int ret, i, mapped_ports = 0;
@@ -92,9 +92,12 @@ struct ixmap_buf *ixmap_buf_alloc_cuda(struct ixmap_handle **ih_list,
 		goto err_mmap;
 
 	ret_cuda = cudaHostRegister(addr_virt, size, cudaHostRegisterMapped);
-	if(ret_cuda != cudaSuccess){
+	if(ret_cuda != cudaSuccess)
 		goto err_cuda;
-	}
+
+	ret_cuda = cudaHostGetDevicePointer(&addr_cuda, addr_virt, 0);
+	if(ret_cuda != cudaSuccess)
+		goto err_cuda_getdev;
 
 	for(i = 0; i < ih_num; i++, mapped_ports++){
 		ret = ixmap_dma_map(ih_list[i], addr_virt, &addr_dma, size);
@@ -108,10 +111,12 @@ struct ixmap_buf *ixmap_buf_alloc_cuda(struct ixmap_handle **ih_list,
 	if(!slots)
 		goto err_alloc_slots;
 
-	buf->addr_virt = addr_virt;
+	buf->addr_virt = addr_cuda;
 	buf->buf_size = buf_size;
 	buf->count = count;
 	buf->slots = slots;
+
+	buf->addr_temp = addr_virt;
 
 	for(i = 0; i < buf->count * ih_num; i++){
 		buf->slots[i] = 0;
@@ -124,6 +129,7 @@ err_ixmap_dma_map:
 	for(i = 0; i < mapped_ports; i++){
 		ixmap_dma_unmap(ih_list[i], buf->addr_dma[i]);
 	}
+err_cuda_getdev:
 	cudaHostUnregister(addr_virt);
 err_cuda:
 	munmap(addr_virt, size);
@@ -149,10 +155,10 @@ void ixmap_buf_release_cuda(struct ixmap_buf *buf,
 			perror("failed to unmap buf");
 	}
 
-	cudaHostUnregister(buf->addr_virt);
+	cudaHostUnregister(buf->addr_temp);
 
 	size = buf->buf_size * buf->count;
-	munmap(buf->addr_virt, size);
+	munmap(buf->addr_temp, size);
 	free(buf->addr_dma);
 	free(buf);
 

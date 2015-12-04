@@ -43,6 +43,8 @@ __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 	forward_process<<<CUDA_NMPROCS, CUDA_NTHREADS>>>
 		(thread, port_index, packet, result);
 
+	cudaDeviceSynchronize();
+
 	for(i = 0; i < num_packets; i++){
 		if(result[i].outif >= 0){
 			ixmap_tx_assign(thread->plane, result[i].outif,
