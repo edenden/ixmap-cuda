@@ -7,6 +7,11 @@
 #include <stddef.h>
 #include <ixmap.h>
 
+#include <driver_functions.h>
+#include <driver_types.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 #include "linux/list.h"
 #include "main.h"
 #include "neigh.h"
@@ -22,14 +27,12 @@ static int neigh_key_compare_v6(void *key_tgt, void *key_ent);
 struct neigh_table *neigh_alloc(struct ixmap_desc *desc, int family)
 {
 	struct neigh_table *neigh;
-	struct ixmap_marea *area;
+	cudaError_t ret_cuda;
 
-	area = ixmap_mem_alloc(desc, sizeof(struct neigh_table));
-	if(!area)
+	ret_cuda = cudaMallocManaged((void **)&neigh,
+		sizeof(struct neigh_table), cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
 		goto err_neigh_alloc;
-
-	neigh = area->ptr;
-	neigh->area = area;
 
 	hash_init(&neigh->table);
 	neigh->table.hash_entry_delete = neigh_entry_delete;
@@ -55,7 +58,7 @@ struct neigh_table *neigh_alloc(struct ixmap_desc *desc, int family)
 	return neigh;
 
 err_invalid_family:
-	ixmap_mem_free(neigh->area);
+	cudaFree(neigh);
 err_neigh_alloc:
 	return NULL;
 }
@@ -63,7 +66,7 @@ err_neigh_alloc:
 void neigh_release(struct neigh_table *neigh)
 {
 	hash_delete_all(&neigh->table);
-	ixmap_mem_free(neigh->area);
+	cudaFree(neigh);
 	return;
 }
 
@@ -72,7 +75,7 @@ static void neigh_entry_delete(struct hash_entry *entry)
 	struct neigh_entry *neigh_entry;
 
 	neigh_entry = hash_entry(entry, struct neigh_entry, hash);
-	ixmap_mem_free(neigh_entry->area);
+	cudaFree(neigh_entry);
 	return;
 }
 
@@ -110,15 +113,13 @@ int neigh_add(struct neigh_table *neigh, int family,
 	void *dst_addr, void *mac_addr, struct ixmap_desc *desc) 
 {
 	struct neigh_entry *neigh_entry;
-	struct ixmap_marea *area;
+	cudaError_t ret_cuda;
 	int ret;
 
-	area = ixmap_mem_alloc(desc, sizeof(struct neigh_entry));
-	if(!area)
+	ret_cuda = cudaMallocManaged((void **)&neigh_entry,
+		sizeof(struct neigh_entry), cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
 		goto err_alloc_entry;
-
-	neigh_entry = area->ptr;
-	neigh_entry->area = area;
 
 	memcpy(neigh_entry->dst_mac, mac_addr, ETH_ALEN);
 	switch(family){
@@ -145,7 +146,7 @@ int neigh_add(struct neigh_table *neigh, int family,
 
 err_hash_add:
 err_invalid_family:
-	ixmap_mem_free(neigh_entry->area);
+	cudaFree(neigh_entry);
 err_alloc_entry:
 	return -1;
 }

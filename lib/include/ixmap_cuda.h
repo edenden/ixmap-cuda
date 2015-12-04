@@ -10,10 +10,6 @@ __host__ void ixmap_slot_release_cuda(struct ixmap_buf *buf,
 	int slot_index);
 #endif
 
-struct ixmap_desc *ixmap_desc_alloc_cuda(struct ixmap_handle **ih_list,
-	int ih_num, int queue_index);
-void ixmap_desc_release_cuda(struct ixmap_handle **ih_list, int ih_num,
-	int queue_index, struct ixmap_desc *desc);
 struct ixmap_buf *ixmap_buf_alloc_cuda(struct ixmap_handle **ih_list,
 	int ih_num, uint32_t count, uint32_t buf_size);
 void ixmap_buf_release_cuda(struct ixmap_buf *buf,

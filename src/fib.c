@@ -7,6 +7,11 @@
 #include <stddef.h>
 #include <ixmap.h>
 
+#include <driver_functions.h>
+#include <driver_types.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 #include "linux/list.h"
 #include "main.h"
 #include "fib.h"
@@ -20,14 +25,12 @@ static void fib_entry_put(void *ptr);
 struct fib *fib_alloc(struct ixmap_desc *desc)
 {
         struct fib *fib;
-	struct ixmap_marea *area;
+	cudaError_t ret_cuda;
 
-	area = ixmap_mem_alloc(desc, sizeof(struct fib));
-	if(!area)
+	ret_cuda = cudaMallocManaged((void **)&fib,
+		sizeof(struct fib), cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
 		goto err_fib_alloc;
-
-	fib = area->ptr;
-	fib->area = area;
 
 	lpm_init(&fib->table);
 
@@ -45,7 +48,7 @@ err_fib_alloc:
 void fib_release(struct fib *fib)
 {
 	lpm_delete_all(&fib->table);
-	ixmap_mem_free(fib->area);
+	cudaFree(fib);
 	return;
 }
 
@@ -54,15 +57,13 @@ int fib_route_update(struct fib *fib, int family, enum fib_type type,
 	int port_index, int id, struct ixmap_desc *desc)
 {
 	struct fib_entry *entry;
-	struct ixmap_marea *area;
 	int ret;
+	cudaError_t ret_cuda;
 
-	area = ixmap_mem_alloc(desc, sizeof(struct fib_entry));
-	if(!area)
+	ret_cuda = cudaMallocManaged((void **)&entry,
+		sizeof(struct fib_entry), cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
 		goto err_alloc_entry;
-
-	entry = area->ptr;
-	entry->area = area;
 
 	switch(family){
 	case AF_INET:
@@ -98,7 +99,7 @@ int fib_route_update(struct fib *fib, int family, enum fib_type type,
 
 err_lpm_add:
 err_invalid_family:
-	ixmap_mem_free(entry->area);
+	cudaFree(entry);
 err_alloc_entry:
 	return -1;
 }
@@ -166,6 +167,6 @@ static void fib_entry_put(void *ptr)
 	entry->refcount--;
 
 	if(!entry->refcount){
-		ixmap_mem_free(entry->area);
+		cudaFree(entry);
 	}
 }

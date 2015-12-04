@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	}
 
 	for(i = 0; i < ixmapfwd.num_cores; i++, desc_assigned++){
-		threads[i].desc = ixmap_desc_alloc_cuda(ixmapfwd.ih_array,
+		threads[i].desc = ixmap_desc_alloc(ixmapfwd.ih_array,
 			ixmapfwd.num_ports, i);
 		if(!threads[i].desc){
 			ixmapfwd_log(LOG_ERR, "failed to ixmap_alloc_descring, idx = %d", i);
@@ -270,7 +270,7 @@ err_tun_open:
 	}
 err_desc_alloc:
 	for(i = 0; i < desc_assigned; i++){
-		ixmap_desc_release_cuda(ixmapfwd.ih_array,
+		ixmap_desc_release(ixmapfwd.ih_array,
 			ixmapfwd.num_ports, i, threads[i].desc);
 	}
 err_open:

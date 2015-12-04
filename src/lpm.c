@@ -5,6 +5,11 @@
 #include <arpa/inet.h>
 #include <stddef.h>
 
+#include <driver_functions.h>
+#include <driver_types.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 #include "main.h"
 #include "lpm.h"
 
@@ -46,7 +51,6 @@ static void lpm_init_node(struct lpm_node *node)
 {
 	node->next_table = NULL;
 	INIT_LIST_HEAD(&node->head);
-	node->area = NULL;
 
 	return;
 }
@@ -71,8 +75,8 @@ int lpm_add(struct lpm_table *table, void *prefix,
 	struct lpm_node *node;
 	struct lpm_entry *entry;
 	unsigned int range, mask;
-	struct ixmap_marea *area;
 	int i, ret, entry_allocated = 0;
+	cudaError_t ret_cuda;
 
 	index = lpm_index(prefix, 0, 16);
 
@@ -90,12 +94,11 @@ int lpm_add(struct lpm_table *table, void *prefix,
 		for(i = 0; i < range; i++, entry_allocated++){
 			node = &table->node[index | i];
 
-			area = ixmap_mem_alloc(desc, sizeof(struct lpm_entry));
-			if(!area)
+			ret_cuda = cudaMallocManaged((void **)&entry,
+				sizeof(struct lpm_entry), cudaMemAttachGlobal);
+			if(ret_cuda != cudaSuccess)
 				goto err_lpm_add_self;
 
-			entry = area->ptr;
-			entry->area = area;
 			entry->ptr = ptr;
 
 			ret = lpm_entry_insert(table, &node->head, id,
@@ -105,7 +108,7 @@ int lpm_add(struct lpm_table *table, void *prefix,
 
 			continue;
 err_entry_insert:
-			ixmap_mem_free(area);
+			cudaFree(entry);
 			goto err_lpm_add_self;
 		}
 	}
@@ -130,17 +133,14 @@ static int _lpm_add(struct lpm_table *table, void *prefix,
 	struct lpm_entry *entry;
 	unsigned int index;
 	unsigned int range, mask;
-	struct ixmap_marea *area;
 	int i, ret, entry_allocated = 0;
+	cudaError_t ret_cuda;
 
 	if(!parent->next_table){
-		area = ixmap_mem_alloc(desc,
-			sizeof(struct lpm_node) * TABLE_SIZE_8);
-		if(!area)
+		ret_cuda = cudaMallocManaged((void **)&parent->next_table,
+			sizeof(struct lpm_node) * TABLE_SIZE_8, cudaMemAttachGlobal);
+		if(ret_cuda != cudaSuccess)
 			goto err_table_alloc;
-
-		parent->next_table = area->ptr;
-		parent->area = area;
 
 		for(i = 0; i < TABLE_SIZE_8; i++){
 			node = &parent->next_table[i];
@@ -164,12 +164,11 @@ static int _lpm_add(struct lpm_table *table, void *prefix,
 		for(i = 0; i < range; i++){
 			node = &parent->next_table[index | i];
 
-			area = ixmap_mem_alloc(desc, sizeof(struct lpm_entry));
-			if(!area)
+			ret_cuda = cudaMallocManaged((void **)&entry,
+				sizeof(struct lpm_entry), cudaMemAttachGlobal);
+			if(ret_cuda != cudaSuccess)
 				goto err_lpm_add_self;
 
-			entry = area->ptr;
-			entry->area = area;
 			entry->ptr = ptr;
 
 			ret = lpm_entry_insert(table, &node->head, id,
@@ -179,7 +178,7 @@ static int _lpm_add(struct lpm_table *table, void *prefix,
 
 			continue;
 err_entry_insert:
-			ixmap_mem_free(area);
+			cudaFree(entry);
 			goto err_lpm_add_self;
 		}
 	}
@@ -198,7 +197,7 @@ err_lpm_add:
 			goto err_table_alloc;
 		}
 	}
-	ixmap_mem_free(parent->area);
+	cudaFree(parent->next_table);
 	parent->next_table = NULL;
 err_table_alloc:
         return -1;
@@ -277,7 +276,7 @@ static int _lpm_delete(struct lpm_table *table, void *prefix,
 		}
 	}
 
-	ixmap_mem_free(parent->area);
+	cudaFree(parent->next_table);
 	parent->next_table = NULL;
 
 out:
@@ -319,7 +318,7 @@ static void _lpm_delete_all(struct lpm_table *table,
 		}
 	}
 
-	ixmap_mem_free(parent->area);
+	cudaFree(parent->next_table);
 	parent->next_table = NULL;
 
 out:
@@ -428,7 +427,7 @@ static int lpm_entry_delete(struct lpm_table *table, struct list_head *head,
 		if(!table->entry_identify(entry_lpm->ptr, id, prefix_len)){
 			list_del(&entry_lpm->list);
 			table->entry_put(entry_lpm->ptr);
-			ixmap_mem_free(entry_lpm->area);
+			cudaFree(entry_lpm);
 
 			return 0;
 		}
@@ -444,7 +443,7 @@ static void lpm_entry_delete_all(struct lpm_table *table, struct list_head *head
 	list_for_each_entry_safe(entry_lpm, entry_n, head, list){
 		list_del(&entry_lpm->list);
 		table->entry_put(entry_lpm->ptr);
-		ixmap_mem_free(entry_lpm->area);
+		cudaFree(entry_lpm);
 	}
 
 	return;
