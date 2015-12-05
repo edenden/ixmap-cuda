@@ -88,6 +88,14 @@ struct ixmap_plane {
 	struct ixmap_port 	*ports;
 };
 
+struct ixmap_port_cuda {
+	uint8_t			mac_addr[ETH_ALEN];
+};
+
+struct ixmap_plane_cuda {
+	struct ixmap_port_cuda	*ports;
+};
+
 struct nvmap_handle {
  	int			fd;
 };

@@ -263,6 +263,43 @@ void ixmap_buf_release_cuda_direct(struct ixmap_buf *buf,
 	return;
 }
 
+struct ixmap_plane_cuda *ixmap_plane_alloc_cuda(struct ixmap_handle **ih_list,
+	struct ixmap_buf *buf, int ih_num, int queue_index)
+{
+	struct ixmap_plane_cuda *plane;
+	cudaError_t ret_cuda;
+	int i;
+
+	ret_cuda = cudaMallocManaged((void **)&plane,
+		sizeof(struct ixmap_plane_cuda), cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
+		goto err_plane_alloc;
+
+	ret_cuda = cudaMallocManaged((void **)&plane->ports,
+		sizeof(struct ixmap_port) * ih_num, cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
+		goto err_alloc_ports;
+
+	for(i = 0; i < ih_num; i++){
+		memcpy(plane->ports[i].mac_addr, ih_list[i]->mac_addr, ETH_ALEN);
+	}
+
+	return plane;
+
+err_alloc_ports:
+	cudaFree(plane);
+err_plane_alloc:
+	return NULL;
+}
+
+void ixmap_plane_release_cuda(struct ixmap_plane_cuda *plane)
+{
+	cudaFree(plane->ports);
+	cudaFree(plane);
+
+	return;
+}
+
 static int ixmap_dma_map(struct ixmap_handle *ih, void *addr_virt,
 	unsigned long *addr_dma, unsigned long size)
 {

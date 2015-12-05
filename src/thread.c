@@ -144,16 +144,33 @@ static int thread_wait(struct ixmapfwd_thread *thread,
         struct epoll_desc *ep_desc;
         struct ixmap_irqdev_handle *irqh;
         struct epoll_event events[EPOLL_MAXEVENTS];
-	struct ixmap_packet packet[IXMAP_RX_BUDGET];
+	struct ixmap_packet *packet;
 	struct ixmap_packet_cuda *result;
+	struct ixmapfwd_thread_cuda *thread_cuda;
         int i, ret, num_fd;
         unsigned int port_index;
 	cudaError_t ret_cuda;
+
+	ret_cuda = cudaMallocManaged((void **)&thread_cuda,
+		sizeof(struct ixmapfwd_thread_cuda), cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
+		goto err_alloc_thread_cuda;
+
+	ret_cuda = cudaMallocManaged((void **)&packet,
+		sizeof(struct ixmap_packet_cuda) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
+	if(ret_cuda != cudaSuccess)
+		goto err_alloc_packet;
 
 	ret_cuda = cudaMallocManaged((void **)&result,
 		sizeof(struct ixmap_packet_cuda) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_result;
+
+	thread_cuda->plane = thread->plane_cuda;
+	thread_cuda->neigh_inet = thread->neigh_inet;
+	thread_cuda->neigh_inet6 = thread->neigh_inet6;
+	thread_cuda->fib_inet = thread->fib_inet;
+	thread_cuda->fib_inet6 = thread->fib_inet6;
 
 	while(1){
 		num_fd = epoll_wait(fd_ep, events, EPOLL_MAXEVENTS, -1);
@@ -174,7 +191,7 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 					thread->buf, packet);
 
 				forward_process_offload(thread, port_index, packet, ret,
-					result);
+					result, thread_cuda);
 
 				for(i = 0; i < thread->num_ports; i++){
 					ixmap_tx_xmit(thread->plane, i);
@@ -236,11 +253,17 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 
 out:
 	cudaFree(result);
+	cudaFree(packet);
+	cudaFree(thread_cuda);
 	return 0;
 
 err_read:
 	cudaFree(result);
 err_alloc_result:
+	cudaFree(packet);
+err_alloc_packet:
+	cudaFree(thread_cuda);
+err_alloc_thread_cuda:
 	return -1;
 }
 

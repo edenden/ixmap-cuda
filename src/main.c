@@ -215,6 +215,13 @@ int main(int argc, char **argv)
 			goto err_plane_alloc;
 		}
 
+		threads[i].plane_cuda = ixmap_plane_alloc_cuda(ixmapfwd.ih_array,
+			threads[i].buf, ixmapfwd.num_ports, i);
+		if(!threads[i].plane){
+			ixmapfwd_log(LOG_ERR, "failed to ixmap_plane_alloc_cuda, idx = %d", i);
+			goto err_plane_alloc_cuda;
+		}
+
 		threads[i].tun_plane = tun_plane_alloc(&ixmapfwd, i);
 		if(!threads[i].tun_plane)
 			goto err_tun_plane_alloc;
@@ -229,6 +236,8 @@ int main(int argc, char **argv)
 err_thread_create:
 		tun_plane_release(threads[i].tun_plane);
 err_tun_plane_alloc:
+		ixmap_plane_release_cuda(threads[i].plane_cuda);
+err_plane_alloc_cuda:
 		ixmap_plane_release(threads[i].plane);
 err_plane_alloc:
 		if(ixmapfwd.gpudirect){
@@ -254,6 +263,7 @@ err_assign_cores:
 	for(i = 0; i < cores_assigned; i++){
 		ixmapfwd_thread_kill(&threads[i]);
 		tun_plane_release(threads[i].tun_plane);
+		ixmap_plane_release_cuda(threads[i].plane_cuda);
 		ixmap_plane_release(threads[i].plane);
 		if(ixmapfwd.gpudirect){
 			ixmap_buf_release_cuda_direct(threads[i].buf,

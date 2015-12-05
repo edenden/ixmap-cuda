@@ -10,6 +10,7 @@
 
 struct ixmapfwd_thread {
 	struct ixmap_plane	*plane;
+	struct ixmap_plane_cuda	*plane_cuda;
 	struct ixmap_buf	*buf;
 	struct ixmap_desc	*desc;
 	struct neigh_table	**neigh_inet;
@@ -22,6 +23,14 @@ struct ixmapfwd_thread {
 	pthread_t		ptid;
 	unsigned int		num_ports;
 	int			gpudirect;
+};
+
+struct ixmapfwd_thread_cuda {
+	struct ixmap_plane_cuda	*plane;
+	struct neigh_table	**neigh_inet;
+	struct neigh_table	**neigh_inet6;
+	struct fib		*fib_inet;
+	struct fib		*fib_inet6;
 };
 
 void *thread_process_interrupt(void *data);

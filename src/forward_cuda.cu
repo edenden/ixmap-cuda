@@ -22,25 +22,26 @@ extern "C" {
 }
 
 extern "C"
-__global__ static void forward_process(struct ixmapfwd_thread *thread,
+__global__ static void forward_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	unsigned int port_index, struct ixmap_packet *packet,
 	struct ixmap_packet_cuda *result);
 extern "C"
-__device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
+__device__ static int forward_ip_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	unsigned int port_index, struct ixmap_packet *packet);
 extern "C"
-__device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
+__device__ static int forward_ip6_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	unsigned int port_index, struct ixmap_packet *packet);
 
 extern "C"
 __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
-	unsigned int num_packets, struct ixmap_packet_cuda *result)
+	unsigned int num_packets, struct ixmap_packet_cuda *result,
+	struct ixmapfwd_thread_cuda *thread_cuda)
 {
 	int fd, i;
 
 	forward_process<<<CUDA_NMPROCS, CUDA_NTHREADS>>>
-		(thread, port_index, packet, result);
+		(thread_cuda, port_index, packet, result);
 
 	cudaDeviceSynchronize();
 
@@ -65,7 +66,7 @@ packet_drop:
 }
 
 extern "C"
-__global__ static void forward_process(struct ixmapfwd_thread *thread,
+__global__ static void forward_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	unsigned int port_index, struct ixmap_packet *packet,
 	struct ixmap_packet_cuda *result)
 {
@@ -81,11 +82,11 @@ __global__ static void forward_process(struct ixmapfwd_thread *thread,
 		break;
 	case ETH_P_IP:
 		result[index].outif =
-			forward_ip_process(thread, port_index, &packet[index]);
+			forward_ip_process(thread_cuda, port_index, &packet[index]);
 		break;
 	case ETH_P_IPV6:
 		result[index].outif =
-			forward_ip6_process(thread, port_index, &packet[index]);
+			forward_ip6_process(thread_cuda, port_index, &packet[index]);
 		break;
 	default:
 		result[index].outif = -1;
@@ -96,7 +97,7 @@ __global__ static void forward_process(struct ixmapfwd_thread *thread,
 }
 
 extern "C"
-__device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
+__device__ static int forward_ip_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	unsigned int port_index, struct ixmap_packet *packet)
 {
 	struct ethhdr		*eth;
@@ -110,7 +111,7 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	eth = (struct ethhdr *)packet->slot_buf;
 	ip = (struct iphdr *)(eth + 1);
 
-	fib_entry = fib_lookup(thread->fib_inet, &ip->daddr);
+	fib_entry = fib_lookup(thread_cuda->fib_inet, &ip->daddr);
 	if(!fib_entry)
 		goto packet_drop;
 
@@ -122,12 +123,12 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 		goto packet_local;
 	case FIB_TYPE_LINK:
 		neigh_entry = neigh_lookup_v4(
-			thread->neigh_inet[fib_entry->port_index],
+			thread_cuda->neigh_inet[fib_entry->port_index],
 			&ip->daddr);
 		break;
 	case FIB_TYPE_FORWARD:
 		neigh_entry = neigh_lookup_v4(
-			thread->neigh_inet[fib_entry->port_index],
+			thread_cuda->neigh_inet[fib_entry->port_index],
 			fib_entry->nexthop);
 		break;
 	default:
@@ -148,7 +149,7 @@ __device__ static int forward_ip_process(struct ixmapfwd_thread *thread,
 	ip->check = check + ((check >= 0xFFFF) ? 1 : 0);
 
 	dst_mac = neigh_entry->dst_mac;
-	src_mac = ixmap_macaddr_cuda(thread->plane, fib_entry->port_index);
+	src_mac = ixmap_macaddr_cuda(thread_cuda->plane, fib_entry->port_index);
 	memcpy(eth->h_dest, dst_mac, ETH_ALEN);
 	memcpy(eth->h_source, src_mac, ETH_ALEN);
 
@@ -162,7 +163,7 @@ packet_drop:
 }
 
 extern "C"
-__device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
+__device__ static int forward_ip6_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	unsigned int port_index, struct ixmap_packet *packet)
 {
 	struct ethhdr		*eth;
@@ -179,7 +180,7 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	&& (ip6->ip6_dst.s6_addr[1] & 0xc0) == 0x80)
 		goto packet_local;
 
-	fib_entry = fib_lookup(thread->fib_inet6, (uint32_t *)&ip6->ip6_dst);
+	fib_entry = fib_lookup(thread_cuda->fib_inet6, (uint32_t *)&ip6->ip6_dst);
 	if(!fib_entry)
 		goto packet_drop;
 
@@ -191,12 +192,12 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 		goto packet_local;
 	case FIB_TYPE_LINK:
 		neigh_entry = neigh_lookup_v6(
-			thread->neigh_inet6[fib_entry->port_index],
+			thread_cuda->neigh_inet6[fib_entry->port_index],
 			&ip6->ip6_dst);
 		break;
 	case FIB_TYPE_FORWARD:
 		neigh_entry = neigh_lookup_v6(
-			thread->neigh_inet6[fib_entry->port_index],
+			thread_cuda->neigh_inet6[fib_entry->port_index],
 			fib_entry->nexthop);
 		break;
 	default:
@@ -213,7 +214,7 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread *thread,
 	ip6->ip6_hlim--;
 
 	dst_mac = neigh_entry->dst_mac;
-	src_mac = ixmap_macaddr_cuda(thread->plane, fib_entry->port_index);
+	src_mac = ixmap_macaddr_cuda(thread_cuda->plane, fib_entry->port_index);
 	memcpy(eth->h_dest, dst_mac, ETH_ALEN);
 	memcpy(eth->h_source, src_mac, ETH_ALEN);
 

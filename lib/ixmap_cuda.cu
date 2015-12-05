@@ -17,7 +17,7 @@ __host__ void ixmap_slot_release_cuda(struct ixmap_buf *buf,
 }
 
 extern "C"
-__device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane *plane,
+__device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane_cuda *plane,
 	unsigned int port_index)
 {
 	return plane->ports[port_index].mac_addr;
