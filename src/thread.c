@@ -157,7 +157,7 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 		goto err_alloc_thread_cuda;
 
 	ret_cuda = cudaMallocManaged((void **)&packet,
-		sizeof(struct ixmap_packet_cuda) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
+		sizeof(struct ixmap_packet) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_packet;
 
