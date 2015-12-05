@@ -73,7 +73,7 @@ __global__ static void forward_process(struct ixmapfwd_thread_cuda *thread_cuda,
 	struct ethhdr *eth;
 	int index;
 
-	index = blockIdx.x * threadIdx.x;
+	index = blockDim.x * blockIdx.x + threadIdx.x;
 
 	eth = (struct ethhdr *)packet[index].slot_buf;
 	switch(bswap_16(eth->h_proto)){
