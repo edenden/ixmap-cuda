@@ -276,7 +276,7 @@ struct ixmap_plane_cuda *ixmap_plane_alloc_cuda(struct ixmap_handle **ih_list,
 		goto err_plane_alloc;
 
 	ret_cuda = cudaMallocManaged((void **)&plane->ports,
-		sizeof(struct ixmap_port) * ih_num, cudaMemAttachGlobal);
+		sizeof(struct ixmap_port_cuda) * ih_num, cudaMemAttachGlobal);
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_ports;
 
