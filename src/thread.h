@@ -22,7 +22,6 @@ struct ixmapfwd_thread {
 	pthread_t		tid;
 	pthread_t		ptid;
 	unsigned int		num_ports;
-	int			gpudirect;
 };
 
 struct ixmapfwd_thread_cuda {
