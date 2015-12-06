@@ -60,7 +60,7 @@ packet_inject:
 		cudaMemcpy(read_buf, packet[i].slot_buf, packet[i].slot_size,
 			cudaMemcpyDeviceToHost);
 		fd = thread->tun_plane->ports[port_index].fd;
-		write(fd, packet[i].slot_buf, packet[i].slot_size);
+		write(fd, read_buf, packet[i].slot_size);
 packet_drop:
 		ixmap_slot_release_cuda(thread->buf, packet[i].slot_index);
 	}
