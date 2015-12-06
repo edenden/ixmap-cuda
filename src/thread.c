@@ -191,7 +191,7 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 					thread->buf, packet);
 
 				forward_process_offload(thread, port_index, packet, ret,
-					result, thread_cuda);
+					thread_cuda, result, read_buf);
 
 				for(i = 0; i < thread->num_ports; i++){
 					ixmap_tx_xmit(thread->plane, i);

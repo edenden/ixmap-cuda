@@ -23,7 +23,7 @@ extern "C" {
 
 extern "C"
 __global__ static void forward_process(struct ixmapfwd_thread_cuda *thread_cuda,
-	unsigned int port_index, struct ixmap_packet *packet,
+	unsigned int num_packets, unsigned int port_index, struct ixmap_packet *packet,
 	struct ixmap_packet_cuda *result);
 extern "C"
 __device__ static int forward_ip_process(struct ixmapfwd_thread_cuda *thread_cuda,
@@ -35,13 +35,13 @@ __device__ static int forward_ip6_process(struct ixmapfwd_thread_cuda *thread_cu
 extern "C"
 __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
-	unsigned int num_packets, struct ixmap_packet_cuda *result,
-	struct ixmapfwd_thread_cuda *thread_cuda)
+	unsigned int num_packets, struct ixmapfwd_thread_cuda *thread_cuda,
+	struct ixmap_packet_cuda *result, uint8_t *read_buf)
 {
 	int fd, i;
 
-	forward_process<<<CUDA_NMPROCS, CUDA_NTHREADS>>>
-		(thread_cuda, port_index, packet, result);
+	forward_process<<<CUDA_NBLOCK_MAX, CUDA_NTHREAD_MAX>>>
+		(thread_cuda, num_packets, port_index, packet, result);
 
 	cudaDeviceSynchronize();
 
@@ -57,6 +57,8 @@ __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 
 		continue;
 packet_inject:
+		cudaMemcpy(read_buf, packet[i].slot_buf, packet[i].slot_size,
+			cudaMemcpyDeviceToHost);
 		fd = thread->tun_plane->ports[port_index].fd;
 		write(fd, packet[i].slot_buf, packet[i].slot_size);
 packet_drop:
@@ -67,13 +69,16 @@ packet_drop:
 
 extern "C"
 __global__ static void forward_process(struct ixmapfwd_thread_cuda *thread_cuda,
-	unsigned int port_index, struct ixmap_packet *packet,
+	unsigned int num_packets, unsigned int port_index, struct ixmap_packet *packet,
 	struct ixmap_packet_cuda *result)
 {
 	struct ethhdr *eth;
 	int index;
 
 	index = blockDim.x * blockIdx.x + threadIdx.x;
+
+	if(!(index < num_packets))
+		goto out;
 
 	eth = (struct ethhdr *)packet[index].slot_buf;
 	switch(bswap_16(eth->h_proto)){
@@ -93,6 +98,7 @@ __global__ static void forward_process(struct ixmapfwd_thread_cuda *thread_cuda,
 		break;
 	}
 
+out:
 	return;
 }
 
