@@ -28,6 +28,7 @@ struct ixmap_ring {
 struct ixmap_desc {
 	void			*addr_virt;
 	struct ixmap_mnode	*node;
+	int			core_id;
 };
 
 struct ixmap_buf {
@@ -62,10 +63,18 @@ struct ixmap_handle {
 	char			interface_name[IFNAMSIZ];
 };
 
+struct ixmap_irq_handle {
+	int			fd;
+	uint64_t		qmask;
+	uint32_t		vector;
+};
+
 struct ixmap_port {
 	void			*irqreg[2];
 	struct ixmap_ring	*rx_ring;
 	struct ixmap_ring	*tx_ring;
+	struct ixmap_irq_handle *rx_irq;
+	struct ixmap_irq_handle *tx_irq;
 	uint32_t		rx_slot_next;
 	uint32_t		rx_slot_offset;
 	uint32_t		tx_suspended;

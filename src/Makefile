@@ -15,7 +15,7 @@ CUDA_LIBRARY_DIR = $(CUDA_PATH)/lib64/
 
 CFLAGS = -I$(CUDA_INCLUDE_DIR) -I../lib/include/
 CCFLAGS = -O2 -Wall
-LDFLAGS = -L$(CUDA_LIBRARY_DIR) -lcuda -lcudart -lpthread -lixmap
+LDFLAGS = -L$(CUDA_LIBRARY_DIR) -lcuda -lcudart -lpthread -lixmap -lnuma
 
 all: $(TARGET)
 

@@ -238,7 +238,7 @@ err_thread_create:
 err_tun_plane_alloc:
 		ixmap_plane_release_cuda(threads[i].plane_cuda);
 err_plane_alloc_cuda:
-		ixmap_plane_release(threads[i].plane);
+		ixmap_plane_release(threads[i].plane, ixmapfwd.num_ports);
 err_plane_alloc:
 		if(ixmapfwd.gpudirect){
 			ixmap_buf_release_cuda_direct(threads[i].buf,
@@ -264,7 +264,7 @@ err_assign_cores:
 		ixmapfwd_thread_kill(&threads[i]);
 		tun_plane_release(threads[i].tun_plane);
 		ixmap_plane_release_cuda(threads[i].plane_cuda);
-		ixmap_plane_release(threads[i].plane);
+		ixmap_plane_release(threads[i].plane, ixmapfwd.num_ports);
 		if(ixmapfwd.gpudirect){
 			ixmap_buf_release_cuda_direct(threads[i].buf,
 				nh, ixmapfwd.num_ports);
