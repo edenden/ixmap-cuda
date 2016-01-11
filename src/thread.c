@@ -164,8 +164,8 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_result;
 
-	cudaHostGetDevicePointer((void **)&packet_device, (void *)packet, 0);
-	cudaHostGetDevicePointer((void **)&result_device, (void *)result, 0);
+	cudaHostGetDevicePointer((void **)&packet_dev, (void *)packet, 0);
+	cudaHostGetDevicePointer((void **)&result_dev, (void *)result, 0);
 
 	thread_cuda->plane = thread->plane_cuda;
 	thread_cuda->neigh_inet = thread->neigh_inet;
