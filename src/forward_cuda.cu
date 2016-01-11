@@ -36,12 +36,13 @@ extern "C"
 __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 	unsigned int port_index, struct ixmap_packet *packet,
 	unsigned int num_packets, struct ixmapfwd_thread_cuda *thread_cuda,
-	struct ixmap_packet_cuda *result, uint8_t *read_buf)
+	struct ixmap_packet_cuda *result, uint8_t *read_buf,
+	struct ixmap_packet *packet_dev, struct ixmap_packet_cuda *result_dev)
 {
 	int fd, i;
 
 	forward_process<<<CUDA_NBLOCK_MAX, CUDA_NTHREAD_MAX>>>
-		(thread_cuda, num_packets, port_index, packet, result);
+		(thread_cuda, num_packets, port_index, packet_dev, result_dev);
 
 	cudaDeviceSynchronize();
 
@@ -57,8 +58,7 @@ __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 
 		continue;
 packet_inject:
-		cudaMemcpy(read_buf, packet[i].slot_buf, packet[i].slot_size,
-			cudaMemcpyDeviceToHost);
+		memcpy(read_buf, packet[i].slot_buf, packet[i].slot_size);
 		fd = thread->tun_plane->ports[port_index].fd;
 		write(fd, read_buf, packet[i].slot_size);
 packet_drop:

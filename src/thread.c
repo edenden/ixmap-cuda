@@ -142,8 +142,8 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 {
         struct epoll_desc *ep_desc;
         struct epoll_event events[EPOLL_MAXEVENTS];
-	struct ixmap_packet *packet;
-	struct ixmap_packet_cuda *result;
+	struct ixmap_packet *packet, *packet_dev;
+	struct ixmap_packet_cuda *result, *result_dev;
 	struct ixmapfwd_thread_cuda *thread_cuda;
         int i, ret, num_fd;
         unsigned int port_index;
@@ -154,15 +154,18 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_thread_cuda;
 
-	ret_cuda = cudaMallocManaged((void **)&packet,
-		sizeof(struct ixmap_packet) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
+	ret_cuda = cudaHostAlloc((void **)&packet,
+		sizeof(struct ixmap_packet) * IXMAP_RX_BUDGET, cudaHostAllocMapped);
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_packet;
 
-	ret_cuda = cudaMallocManaged((void **)&result,
-		sizeof(struct ixmap_packet_cuda) * IXMAP_RX_BUDGET, cudaMemAttachGlobal);
+	ret_cuda = cudaHostAlloc((void **)&result,
+		sizeof(struct ixmap_packet_cuda) * IXMAP_RX_BUDGET, cudaHostAllocMapped);
 	if(ret_cuda != cudaSuccess)
 		goto err_alloc_result;
+
+	cudaHostGetDevicePointer((void **)&packet_device, (void *)packet, 0);
+	cudaHostGetDevicePointer((void **)&result_device, (void *)result, 0);
 
 	thread_cuda->plane = thread->plane_cuda;
 	thread_cuda->neigh_inet = thread->neigh_inet;
@@ -189,7 +192,7 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 				ixmap_rx_assign(thread->plane, port_index, thread->buf);
 
 				forward_process_offload(thread, port_index, packet, ret,
-					thread_cuda, result, read_buf);
+					thread_cuda, result, read_buf, packet_dev, result_dev);
 
 				for(i = 0; i < thread->num_ports; i++){
 					ixmap_tx_xmit(thread->plane, i);
@@ -248,15 +251,15 @@ static int thread_wait(struct ixmapfwd_thread *thread,
 	}
 
 out:
-	cudaFree(result);
-	cudaFree(packet);
+	cudaFreeHost(result);
+	cudaFreeHost(packet);
 	cudaFree(thread_cuda);
 	return 0;
 
 err_read:
-	cudaFree(result);
+	cudaFreeHost(result);
 err_alloc_result:
-	cudaFree(packet);
+	cudaFreeHost(packet);
 err_alloc_packet:
 	cudaFree(thread_cuda);
 err_alloc_thread_cuda:
