@@ -125,8 +125,6 @@ int main(int argc, char **argv)
 
 	openlog(PROCESS_NAME, LOG_CONS | LOG_PID, SYSLOG_FACILITY);
 
-	cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
-
 	if(ixmapfwd.gpudirect){
 		nh = nvmap_open();
 		if(!nh){

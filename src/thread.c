@@ -111,17 +111,18 @@ err_neigh_inet_alloc:
 	}
 
 	/* Create CUDA stream */
-	ret_cuda = cudaStreamCreate(&thread->stream);
+	ret_cuda = cudaEventCreateWithFlags(&thread->event,
+		cudaEventBlockingSync);
 	if(ret_cuda != cudaSuccess)
-		goto err_stream_create;
+		goto err_event_create;
 
 	ret = thread_wait(thread, fd_ep, read_buf, read_size);
 	if(ret < 0)
 		goto err_wait;
 
 err_wait:
-	cudaStreamDestroy(thread->stream);
-err_stream_create:
+	cudaEventDestroy(thread->event);
+err_event_create:
 	thread_fd_destroy(&ep_desc_head, fd_ep);
 err_ixgbe_epoll_prepare:
 	free(read_buf);

@@ -41,10 +41,10 @@ __host__ void forward_process_offload(struct ixmapfwd_thread *thread,
 {
 	int fd, i;
 
-	forward_process<<<CUDA_NBLOCK_MAX, CUDA_NTHREAD_MAX, 0, thread->stream>>>
+	forward_process<<<CUDA_NBLOCK_MAX, CUDA_NTHREAD_MAX>>>
 		(thread_cuda, num_packets, port_index, packet_dev, result_dev);
 
-	cudaStreamSynchronize(thread->stream);
+	cudaEventSynchronize(thread->event);
 
 	for(i = 0; i < num_packets; i++){
 		if(result[i].outif >= 0){
