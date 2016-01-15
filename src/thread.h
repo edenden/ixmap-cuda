@@ -22,7 +22,7 @@ struct ixmapfwd_thread {
 	pthread_t		tid;
 	pthread_t		ptid;
 	unsigned int		num_ports;
-	cudaEvent_t		event;
+	cudaStream_t		stream;
 };
 
 struct ixmapfwd_thread_cuda {
