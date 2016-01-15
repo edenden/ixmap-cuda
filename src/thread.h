@@ -2,8 +2,6 @@
 #define _IXMAPFWD_THREAD_H
 
 #include <pthread.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
 #include <ixmap.h>
 
 #include "iftap.h"
