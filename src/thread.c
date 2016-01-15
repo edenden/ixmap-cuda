@@ -120,7 +120,7 @@ err_neigh_inet_alloc:
 		goto err_wait;
 
 err_wait:
-	cudaStreamDestroy(&thread->stream);
+	cudaStreamDestroy(thread->stream);
 err_stream_create:
 	thread_fd_destroy(&ep_desc_head, fd_ep);
 err_ixgbe_epoll_prepare:
