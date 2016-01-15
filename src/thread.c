@@ -110,11 +110,18 @@ err_neigh_inet_alloc:
 		ixmap_rx_assign(thread->plane, i, thread->buf);
 	}
 
+	/* Create CUDA stream */
+	ret_cuda = cudaStreamCreate(&thread->stream);
+	if(ret_cuda != cudaSuccess)
+		goto err_stream_create;
+
 	ret = thread_wait(thread, fd_ep, read_buf, read_size);
 	if(ret < 0)
 		goto err_wait;
 
 err_wait:
+	cudaStreamDestroy(&thread->stream);
+err_stream_create:
 	thread_fd_destroy(&ep_desc_head, fd_ep);
 err_ixgbe_epoll_prepare:
 	free(read_buf);
