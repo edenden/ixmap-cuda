@@ -16,9 +16,6 @@
 #include <ixmap.h>
 #include <ixmap_cuda.h>
 
-#include <cuda.h>
-#include <cuda_runtime.h>
-
 #include "linux/list.h"
 #include "main.h"
 #include "thread.h"
