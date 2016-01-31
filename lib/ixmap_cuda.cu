@@ -9,14 +9,6 @@
 #include "ixmap.h"
 
 extern "C"
-__host__ void ixmap_slot_release_cuda(struct ixmap_buf *buf,
-	int slot_index)
-{
-	buf->slots[slot_index] = 0;
-	return;
-}
-
-extern "C"
 __device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane_cuda *plane,
 	unsigned int port_index)
 {

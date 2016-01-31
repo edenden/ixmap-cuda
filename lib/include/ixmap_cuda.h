@@ -5,9 +5,6 @@
 extern "C"
 __device__ uint8_t *ixmap_macaddr_cuda(struct ixmap_plane_cuda *plane,
 	unsigned int port_index);
-extern "C"
-__host__ void ixmap_slot_release_cuda(struct ixmap_buf *buf,
-	int slot_index);
 #endif
 
 struct ixmap_buf *ixmap_buf_alloc_cuda(struct ixmap_handle **ih_list,
